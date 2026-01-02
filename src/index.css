@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Opcional: Garante que o rodapé fique sempre embaixo */
+main {
+  min-height: 80vh;
+}
