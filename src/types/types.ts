@@ -10,3 +10,13 @@ export interface Product {
     rating: number;
     numReviews: number;
 }
+
+
+
+export interface User {
+    _id: string;
+    name: string;
+    email: string;
+    isAdmin: boolean;
+    token?: string;
+}
