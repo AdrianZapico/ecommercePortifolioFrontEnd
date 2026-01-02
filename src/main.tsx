@@ -6,14 +6,16 @@ import {
   Route,
   RouterProvider
 } from 'react-router-dom'
-// REMOVA A LINHA DO BOOTSTRAP.CSS SE ELA AINDA ESTIVER AQUI
 import App from './App.tsx'
-import './index.css' // O Tailwind carrega aqui
+import './index.css'
+// Importe a tela nova
+import HomeScreen from './screens/HomeScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
-      <Route path="/" index={true} element={<h1 className="text-3xl font-bold text-slate-700">Tela Principal (Home)</h1>} />
+      {/* Defina HomeScreen como o elemento da rota raiz (index) */}
+      <Route index={true} element={<HomeScreen />} />
     </Route>
   )
 )
