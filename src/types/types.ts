@@ -1,3 +1,12 @@
+export type Review = {
+    _id: string;
+    name: string;
+    rating: number;
+    comment: string;
+    user: string;
+    createdAt: string;
+};
+
 export interface Product {
     _id: string;
     name: string;
@@ -9,8 +18,8 @@ export interface Product {
     countInStock: number;
     rating: number;
     numReviews: number;
+    reviews: Review[];
 }
-
 
 
 export interface User {
