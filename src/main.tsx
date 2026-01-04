@@ -24,7 +24,7 @@ import OrderScreen from './screens/OrderScreen.tsx';
 import ProfileScreen from './screens/ProfileScreen.tsx';
 import UserListScreen from './screens/admin/UserListScreen.tsx';
 import ProductListScreen from './screens/admin/ProductListScreen.tsx';
-
+import ProductEditScreen from './screens/admin/ProductEditScreen.tsx';
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
@@ -40,6 +40,7 @@ const router = createBrowserRouter(
       <Route path="/profile" element={<ProfileScreen />} />
       <Route path="/admin/userlist" element={<UserListScreen />} />
       <Route path="/admin/productlist" element={<ProductListScreen />} />
+      <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
     </Route>
   )
 );
