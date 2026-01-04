@@ -30,10 +30,19 @@ import OrderListScreen from './screens/admin/OrderListScreen.tsx';
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
-      <Route index={true} element={<HomeScreen />} />
+
+      {/* --- ROTAS DA HOME (Busca e Paginação) --- */}
+      {/* 1. Busca com Paginação */}
+      <Route path="/search/:keyword/page/:pageNumber" element={<HomeScreen />} />
+      {/* 2. Busca Simples */}
       <Route path="/search/:keyword" element={<HomeScreen />} />
+      {/* 3. Paginação Simples (sem busca) */}
+      <Route path="/page/:pageNumber" element={<HomeScreen />} />
+      {/* 4. Home Padrão */}
+      <Route index={true} path="/" element={<HomeScreen />} />
+      {/* ----------------------------------------- */}
+
       <Route path="/product/:id" element={<ProductScreen />} />
-      {/* Nova rota do Carrinho */}
       <Route path="/cart" element={<CartScreen />} />
       <Route path="/login" element={<LoginScreen />} />
       <Route path="/shipping" element={<ShippingScreen />} />
@@ -41,6 +50,8 @@ const router = createBrowserRouter(
       <Route path="/placeorder" element={<PlaceOrderScreen />} />
       <Route path="/order/:id" element={<OrderScreen />} />
       <Route path="/profile" element={<ProfileScreen />} />
+
+      {/* Rotas de Admin */}
       <Route path="/admin/userlist" element={<UserListScreen />} />
       <Route path="/admin/productlist" element={<ProductListScreen />} />
       <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />
@@ -51,7 +62,6 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {/* 2. Envolva tudo com o Provider */}
     <Provider store={store}>
       <RouterProvider router={router} />
     </Provider>

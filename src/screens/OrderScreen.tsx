@@ -71,9 +71,19 @@ const OrderScreen = () => {
                     {/* ENVIO */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Envio</h2>
-                        <p className="mb-2"><strong>Nome: </strong> {order.user.name}</p>
-                        <p className="mb-2"><strong>Email: </strong> {order.user.email}</p>
-                        <p className="mb-4">
+                        <p>
+                            <strong>Nome: </strong>
+                            {order.user ? order.user.name : 'Usuário Deletado'}
+                        </p>
+
+                        <p>
+                            <strong>Email: </strong>
+                            {order.user ? (
+                                <a href={`mailto:${order.user.email}`}>{order.user.email}</a>
+                            ) : (
+                                'Email não disponível'
+                            )}
+                        </p><p className="mb-4">
                             <strong>Endereço: </strong>
                             {order.shippingAddress.address}, {order.shippingAddress.city}{' '}
                             {order.shippingAddress.postalCode}, {order.shippingAddress.country}

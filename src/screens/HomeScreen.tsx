@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom'; // <--- 1. Importar useParams
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Product from '../components/Product';
 import ProductCarousel from '../components/ProductCarousel';
+import Paginate from '../components/Paginate'; // <--- 1. Importe
 import type { Product as ProductType } from '../types/types';
 
 const HomeScreen = () => {
@@ -10,18 +11,27 @@ const HomeScreen = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // <--- 2. Pegar a palavra-chave da URL (ex: 'monitor')
-    const { keyword } = useParams();
+    // Estados novos para paginação
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
+
+    // Agora pegamos também o pageNumber da URL
+    const { keyword, pageNumber } = useParams();
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                // <--- 3. Passar a keyword para o backend (?keyword=monitor)
-                // Se não tiver keyword, manda vazio (lista tudo)
-                const { data } = await axios.get(`/api/products?keyword=${keyword || ''}`);
+                // Passamos keyword E pageNumber na URL
+                const { data } = await axios.get(
+                    `/api/products?keyword=${keyword || ''}&pageNumber=${pageNumber || 1}`
+                );
 
-                setProducts(data);
+                // O Backend agora retorna { products, page, pages }
+                setProducts(data.products);
+                setPage(data.page);
+                setPages(data.pages);
+
                 setLoading(false);
             } catch (err: any) {
                 setError(err.response?.data?.message || err.message);
@@ -30,11 +40,10 @@ const HomeScreen = () => {
         };
 
         fetchProducts();
-    }, [keyword]); // <--- 4. IMPORTANTE: Adicionar [keyword] aqui para recarregar quando mudar
+    }, [keyword, pageNumber]); // <--- Roda quando muda a busca ou a página
 
     return (
         <>
-            {/* Se NÃO for busca, mostra o Carrossel. Se FOR busca, mostra botão Voltar */}
             {!keyword ? (
                 <ProductCarousel />
             ) : (
@@ -52,11 +61,16 @@ const HomeScreen = () => {
             ) : error ? (
                 <div className="bg-red-100 p-3 rounded">{error}</div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {products.map((product) => (
-                        <Product key={product._id} product={product} />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {products.map((product) => (
+                            <Product key={product._id} product={product} />
+                        ))}
+                    </div>
+
+                    {/* Adiciona o componente de paginação no final */}
+                    <Paginate pages={pages} page={page} keyword={keyword ? keyword : ''} />
+                </>
             )}
         </>
     );
