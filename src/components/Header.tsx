@@ -20,14 +20,9 @@ const Header = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showAdminMenu, setShowAdminMenu] = useState(false);
 
-    const logoutHandler = async () => {
-        try {
-            await logoutApiCall({}).unwrap();
-            dispatch(logout());
-            navigate('/login');
-        } catch (err) {
-            console.error(err);
-        }
+    const logoutHandler = () => {
+        dispatch(logout());
+        navigate('/login');
     };
 
     return (
