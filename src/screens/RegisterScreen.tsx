@@ -49,7 +49,8 @@ const RegisterScreen = () => {
             hasUpper: /[A-Z]/.test(val),
             hasLower: /[a-z]/.test(val),
             hasNumber: /[0-9]/.test(val),
-            hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(val),
+            // MUDANÇA AQUI: Aceita qualquer caractere especial (incluindo underline, traço, espaço, etc)
+            hasSymbol: /[^A-Za-z0-9]/.test(val),
         });
     };
     // -----------------------------------------------
