@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // <--- Adicionado useNavigate
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -9,10 +9,15 @@ import type { RootState } from '../store';
 
 const ProductScreen = () => {
     const { id: productId } = useParams();
+    const navigate = useNavigate(); // <--- Hook de navegação
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // --- Estado da Quantidade (Para o Carrinho) ---
+    const [qty, setQty] = useState(1);
+    // ---------------------------------------------
 
     // Estados do Formulário de Review
     const [rating, setRating] = useState(0);
@@ -22,7 +27,7 @@ const ProductScreen = () => {
     // Pega o usuário logado do Redux
     const { userInfo } = useSelector((state: RootState) => state.auth);
 
-    // Função para buscar os dados (usada ao carregar e após avaliar)
+    // Função para buscar os dados
     const fetchProduct = async () => {
         try {
             const { data } = await axios.get(`/api/products/${productId}`);
@@ -38,25 +43,29 @@ const ProductScreen = () => {
         fetchProduct();
     }, [productId]);
 
+    // --- Função Adicionar ao Carrinho ---
+    const addToCartHandler = () => {
+        navigate(`/cart/${productId}?qty=${qty}`);
+    };
+    // ------------------------------------
+
     // Função para Enviar a Avaliação
     const submitHandler = async (e: FormEvent) => {
         e.preventDefault();
         setLoadingReview(true);
 
         try {
-            // 1. Criamos a configuração com o Token
             const config = {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userInfo?.token}`, // <--- O "Crachá" aqui!
+                    Authorization: `Bearer ${userInfo?.token}`,
                 },
             };
 
-            // 2. Passamos o config como terceiro argumento
             await axios.post(
                 `/api/products/${productId}/reviews`,
                 { rating, comment },
-                config // <--- Enviamos aqui
+                config
             );
 
             setLoadingReview(false);
@@ -64,7 +73,7 @@ const ProductScreen = () => {
 
             setRating(0);
             setComment('');
-            fetchProduct();
+            fetchProduct(); // Recarrega para mostrar a nova review
 
         } catch (err: any) {
             setLoadingReview(false);
@@ -82,7 +91,7 @@ const ProductScreen = () => {
                 Voltar
             </Link>
 
-            {/* --- DETALHES DO PRODUTO (Parte de Cima) --- */}
+            {/* --- DETALHES DO PRODUTO --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                 <div className="flex justify-center">
                     <img src={product.image} alt={product.name} className="max-w-full h-auto rounded shadow-lg object-cover" style={{ maxHeight: '500px' }} />
@@ -92,7 +101,6 @@ const ProductScreen = () => {
                     <h3 className="text-3xl font-bold mb-4 text-slate-800">{product.name}</h3>
 
                     <div className="border-b border-gray-200 pb-4 mb-4">
-                        {/* Se você não tiver o componente Rating, pode comentar esta linha */}
                         <Rating value={product.rating} text={`${product.numReviews} avaliações`} />
                     </div>
 
@@ -104,20 +112,38 @@ const ProductScreen = () => {
                             <span className="font-semibold">Preço:</span>
                             <span>R$ {product.price}</span>
                         </div>
-                        <div className="flex justify-between mb-6 border-b pb-2">
+                        <div className="flex justify-between mb-4 border-b pb-2">
                             <span className="font-semibold">Status:</span>
                             <span className={product.countInStock > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
                                 {product.countInStock > 0 ? 'Em Estoque' : 'Esgotado'}
                             </span>
                         </div>
 
-                        {/* Botão Adicionar ao Carrinho (Simplificado para o exemplo) */}
+                        {/* --- SELETOR DE QUANTIDADE (RESTAURADO) --- */}
+                        {product.countInStock > 0 && (
+                            <div className="flex justify-between items-center mb-6 border-b pb-2">
+                                <span className="font-semibold">Qtd:</span>
+                                <select
+                                    value={qty}
+                                    onChange={(e) => setQty(Number(e.target.value))}
+                                    className="border border-gray-300 rounded p-1"
+                                >
+                                    {[...Array(product.countInStock).keys()].map((x) => (
+                                        <option key={x + 1} value={x + 1}>
+                                            {x + 1}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        {/* ------------------------------------------ */}
+
                         <button
+                            onClick={addToCartHandler} // <--- AÇÃO RESTAURADA
                             className={`w-full py-3 rounded uppercase font-bold text-white transition
                   ${product.countInStock === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700'}
                 `}
                             disabled={product.countInStock === 0}
-                        // Adicione sua lógica de adicionar ao carrinho aqui se já tiver
                         >
                             {product.countInStock === 0 ? 'Esgotado' : 'Adicionar ao Carrinho'}
                         </button>
@@ -125,10 +151,10 @@ const ProductScreen = () => {
                 </div>
             </div>
 
-            {/* --- SEÇÃO DE AVALIAÇÕES (NOVIDADE AQUI) --- */}
+            {/* --- SEÇÃO DE AVALIAÇÕES --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 bg-slate-50 p-6 rounded-lg">
 
-                {/* Lado Esquerdo: Lista de Comentários */}
+                {/* Lista de Comentários */}
                 <div>
                     <h2 className="text-2xl font-bold mb-6 text-slate-800">Avaliações</h2>
 
@@ -143,7 +169,6 @@ const ProductScreen = () => {
                             <div key={review._id || index} className="bg-white p-4 rounded shadow-sm border border-gray-100">
                                 <strong className="block text-lg text-slate-700">{review.name}</strong>
                                 <div className="flex items-center mb-2">
-                                    {/* Mostra as estrelinhas da review específica */}
                                     <Rating value={review.rating} />
                                 </div>
                                 <p className="text-gray-500 text-sm mb-2">{review.createdAt?.substring(0, 10)}</p>
@@ -153,7 +178,7 @@ const ProductScreen = () => {
                     </div>
                 </div>
 
-                {/* Lado Direito: Formulário de Escrever Review */}
+                {/* Formulário de Review */}
                 <div>
                     <h2 className="text-2xl font-bold mb-6 text-slate-800">Escreva uma Avaliação</h2>
 
