@@ -37,6 +37,20 @@ const OrderScreen = () => {
         }
     }, [orderId, userInfo]);
 
+    const deliverHandler = async () => {
+        try {
+            const config = {
+                headers: { Authorization: `Bearer ${userInfo?.token}` },
+            };
+            await axios.put(`/api/orders/${order._id}/deliver`, {}, config);
+
+            // Recarrega a tela para mostrar o novo status
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.response?.data?.message || err.message);
+        }
+    };
+
     // Se estiver carregando
     if (loading) return <h2 className="text-center mt-10">Carregando pedido...</h2>;
 
@@ -144,6 +158,17 @@ const OrderScreen = () => {
                         {!order.isPaid && (
                             <div className="bg-gray-100 p-3 rounded text-center text-sm text-gray-500">
                                 Botão de Pagamento virá aqui
+                            </div>
+                        )}
+                        {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    className="w-full bg-slate-800 text-white font-bold py-2 px-4 rounded hover:bg-slate-700 transition"
+                                    onClick={deliverHandler}
+                                >
+                                    Marcar como Entregue
+                                </button>
                             </div>
                         )}
 
