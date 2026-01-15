@@ -1,19 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { apiSlice } from './slices/apiSlice'; // <--- Importe isso
-import authSliceReducer from './slices/authSlice';
-import cartSliceReducer from './slices/cartSlice'; // Assumindo que você tem esse
+import { apiSlice } from './slices/apiSlice';
+import authReducer from './slices/authSlice'; // Se tiver authSlice
+import cartSliceReducer from './slices/cartSlice'; // Se tiver cartSlice
 
 const store = configureStore({
     reducer: {
-        [apiSlice.reducerPath]: apiSlice.reducer, // <--- Adicione isso
+        [apiSlice.reducerPath]: apiSlice.reducer,
+        // Adicione seus outros reducers aqui se existirem:
+        auth: authReducer,
         cart: cartSliceReducer,
-        auth: authSliceReducer,
     },
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(apiSlice.middleware), // <--- Adicione isso
+        getDefaultMiddleware().concat(apiSlice.middleware),
     devTools: true,
 });
 
 export default store;
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;

@@ -46,7 +46,7 @@ const HomeScreen = () => {
 
                     {/* Grid responsivo com Tailwind (Substitui Row/Col do Bootstrap) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {data?.products.map((product: any) => (
+                        {data?.products?.map((product: any) => (
                             <Product key={product._id} product={product} />
                         ))}
                     </div>
