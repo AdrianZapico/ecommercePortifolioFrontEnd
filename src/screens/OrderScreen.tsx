@@ -44,7 +44,7 @@ const OrderScreen = () => {
         </Message>
     ) : (
         <div className="container mx-auto mt-10 px-4">
-            <h1 className="text-2xl font-bold mb-6 text-slate-800">Pedido: {order._id}</h1>
+            <h1 className="text-2xl font-bold mb-6 text-slate-800">PEDIDO ATUALIZADOo: {order._id}</h1>
 
             <div className="flex flex-col md:flex-row gap-8">
                 {/* COLUNA ESQUERDA */}
