@@ -1,233 +1,111 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // <--- Adicionado useNavigate
-import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import axios from 'axios';
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { useGetProductDetailsQuery } from '../slices/apiSlice';
+import Loader from '../components/Loader';
+import Message from '../components/Message';
 import Rating from '../components/Rating';
-import type { Product } from '../types/types';
-import type { RootState } from '../store';
+import { addToCart } from '../slices/cartSlice';
 
 const ProductScreen = () => {
     const { id: productId } = useParams();
-    const navigate = useNavigate(); // <--- Hook de navegação
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-    const [product, setProduct] = useState<Product | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    // --- Estado da Quantidade (Para o Carrinho) ---
     const [qty, setQty] = useState(1);
-    // ---------------------------------------------
 
-    // Estados do Formulário de Review
-    const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState('');
-    const [loadingReview, setLoadingReview] = useState(false);
+    // Busca os detalhes do produto usando o ID da URL
+    const { data: product, isLoading, error } = useGetProductDetailsQuery(productId);
 
-    // Pega o usuário logado do Redux
-    const { userInfo } = useSelector((state: RootState) => state.auth);
-
-    // Função para buscar os dados
-    const fetchProduct = async () => {
-        try {
-            const { data } = await axios.get(`/api/products/${productId}`);
-            setProduct(data);
-            setLoading(false);
-        } catch (err: any) {
-            setError(err.response?.data?.message || err.message);
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchProduct();
-    }, [productId]);
-
-    // --- Função Adicionar ao Carrinho ---
     const addToCartHandler = () => {
-        navigate(`/cart/${productId}?qty=${qty}`);
+        dispatch(addToCart({ ...product, qty }));
+        navigate('/cart');
     };
-    // ------------------------------------
-
-    // Função para Enviar a Avaliação
-    const submitHandler = async (e: FormEvent) => {
-        e.preventDefault();
-        setLoadingReview(true);
-
-        try {
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userInfo?.token}`,
-                },
-            };
-
-            await axios.post(
-                `/api/products/${productId}/reviews`,
-                { rating, comment },
-                config
-            );
-
-            setLoadingReview(false);
-            toast.success('Avaliação enviada com sucesso!');
-
-            setRating(0);
-            setComment('');
-            fetchProduct(); // Recarrega para mostrar a nova review
-
-        } catch (err: any) {
-            setLoadingReview(false);
-            toast.error(err.response?.data?.message || err.message);
-        }
-    };
-
-    if (loading) return <h2 className="text-center mt-10">Carregando...</h2>;
-    if (error) return <div className="text-red-500 text-center mt-10">{error}</div>;
-    if (!product) return <div className="text-center mt-10">Produto não encontrado</div>;
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <Link className="btn bg-slate-200 hover:bg-slate-300 text-slate-800 py-2 px-4 rounded mb-6 inline-block" to="/">
-                Voltar
+            <Link to='/' className='bg-slate-200 px-4 py-2 rounded mb-4 inline-block hover:bg-slate-300 text-slate-800 transition-colors'>
+                &larr; Voltar
             </Link>
 
-            {/* --- DETALHES DO PRODUTO --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                <div className="flex justify-center">
-                    <img src={product.image} alt={product.name} className="max-w-full h-auto rounded shadow-lg object-cover" style={{ maxHeight: '500px' }} />
-                </div>
-
-                <div>
-                    <h3 className="text-3xl font-bold mb-4 text-slate-800">{product.name}</h3>
-
-                    <div className="border-b border-gray-200 pb-4 mb-4">
-                        <Rating value={product.rating} text={`${product.numReviews} avaliações`} />
+            {isLoading ? (
+                <Loader />
+            ) : error ? (
+                <Message variant='danger'>
+                    {(error as any)?.data?.message || 'Erro ao carregar produto'}
+                </Message>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                    {/* Coluna da Imagem */}
+                    <div className="flex justify-center">
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full max-w-md h-auto object-cover rounded-lg shadow-lg"
+                        />
                     </div>
 
-                    <p className="text-2xl font-bold mb-4 text-slate-700">R$ {product.price}</p>
-                    <p className="text-gray-600 mb-6 leading-relaxed">{product.description}</p>
+                    {/* Coluna das Informações */}
+                    <div className="space-y-4">
+                        <h3 className="text-3xl font-bold text-slate-800">{product.name}</h3>
 
-                    <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-                        <div className="flex justify-between mb-4 border-b pb-2">
-                            <span className="font-semibold">Preço:</span>
-                            <span>R$ {product.price}</span>
-                        </div>
-                        <div className="flex justify-between mb-4 border-b pb-2">
-                            <span className="font-semibold">Status:</span>
-                            <span className={product.countInStock > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                                {product.countInStock > 0 ? 'Em Estoque' : 'Esgotado'}
-                            </span>
+                        <div className="border-b border-slate-200 pb-2">
+                            <Rating value={product.rating} text={`${product.numReviews} reviews`} />
                         </div>
 
-                        {/* --- SELETOR DE QUANTIDADE (RESTAURADO) --- */}
-                        {product.countInStock > 0 && (
-                            <div className="flex justify-between items-center mb-6 border-b pb-2">
-                                <span className="font-semibold">Qtd:</span>
-                                <select
-                                    value={qty}
-                                    onChange={(e) => setQty(Number(e.target.value))}
-                                    className="border border-gray-300 rounded p-1"
-                                >
-                                    {[...Array(product.countInStock).keys()].map((x) => (
-                                        <option key={x + 1} value={x + 1}>
-                                            {x + 1}
-                                        </option>
-                                    ))}
-                                </select>
+                        <div className="text-2xl font-bold text-slate-700">
+                            Price: ${product.price}
+                        </div>
+
+                        <p className="text-slate-600 leading-relaxed">
+                            {product.description}
+                        </p>
+
+                        {/* Caixa de Ação (Comprar) */}
+                        <div className="bg-white p-6 border rounded-lg shadow-sm mt-4">
+                            <div className="flex justify-between mb-4 border-b pb-2">
+                                <span className="font-bold">Preço:</span>
+                                <span className="text-slate-800">${product.price}</span>
                             </div>
-                        )}
-                        {/* ------------------------------------------ */}
 
-                        <button
-                            onClick={addToCartHandler} // <--- AÇÃO RESTAURADA
-                            className={`w-full py-3 rounded uppercase font-bold text-white transition
-                  ${product.countInStock === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700'}
-                `}
-                            disabled={product.countInStock === 0}
-                        >
-                            {product.countInStock === 0 ? 'Esgotado' : 'Adicionar ao Carrinho'}
-                        </button>
-                    </div>
-                </div>
-            </div>
+                            <div className="flex justify-between mb-4 border-b pb-2">
+                                <span className="font-bold">Status:</span>
+                                <span className={product.countInStock > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                    {product.countInStock > 0 ? 'Em Estoque' : 'Esgotado'}
+                                </span>
+                            </div>
 
-            {/* --- SEÇÃO DE AVALIAÇÕES --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10 bg-slate-50 p-6 rounded-lg">
-
-                {/* Lista de Comentários */}
-                <div>
-                    <h2 className="text-2xl font-bold mb-6 text-slate-800">Avaliações</h2>
-
-                    {product.reviews.length === 0 && (
-                        <div className="bg-blue-100 text-blue-700 p-4 rounded">
-                            Nenhuma avaliação ainda. Seja o primeiro!
-                        </div>
-                    )}
-
-                    <div className="space-y-6">
-                        {product.reviews.map((review: any, index: number) => (
-                            <div key={review._id || index} className="bg-white p-4 rounded shadow-sm border border-gray-100">
-                                <strong className="block text-lg text-slate-700">{review.name}</strong>
-                                <div className="flex items-center mb-2">
-                                    <Rating value={review.rating} />
+                            {product.countInStock > 0 && (
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="font-bold">Qtd:</span>
+                                    <select
+                                        value={qty}
+                                        onChange={(e) => setQty(Number(e.target.value))}
+                                        className="border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+                                    >
+                                        {[...Array(product.countInStock).keys()].map((x) => (
+                                            <option key={x + 1} value={x + 1}>
+                                                {x + 1}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-2">{review.createdAt?.substring(0, 10)}</p>
-                                <p className="text-gray-700">{review.comment}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Formulário de Review */}
-                <div>
-                    <h2 className="text-2xl font-bold mb-6 text-slate-800">Escreva uma Avaliação</h2>
-
-                    {userInfo ? (
-                        <form onSubmit={submitHandler} className="bg-white p-6 rounded shadow-md">
-                            <div className="mb-4">
-                                <label className="block text-gray-700 font-bold mb-2">Nota</label>
-                                <select
-                                    value={rating}
-                                    onChange={(e) => setRating(Number(e.target.value))}
-                                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-slate-500"
-                                >
-                                    <option value="">Selecione...</option>
-                                    <option value="1">1 - Ruim</option>
-                                    <option value="2">2 - Razoável</option>
-                                    <option value="3">3 - Bom</option>
-                                    <option value="4">4 - Muito Bom</option>
-                                    <option value="5">5 - Excelente</option>
-                                </select>
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="block text-gray-700 font-bold mb-2">Comentário</label>
-                                <textarea
-                                    rows={3}
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    placeholder="O que você achou do produto?"
-                                    className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-slate-500"
-                                ></textarea>
-                            </div>
+                            )}
 
                             <button
-                                type="submit"
-                                disabled={loadingReview}
-                                className="bg-slate-800 text-white py-2 px-4 rounded hover:bg-slate-700 font-bold w-full disabled:bg-gray-400"
+                                onClick={addToCartHandler}
+                                disabled={product.countInStock === 0}
+                                className={`w-full py-3 px-4 rounded font-bold text-white transition-colors ${product.countInStock === 0
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-slate-800 hover:bg-slate-700'
+                                    }`}
                             >
-                                {loadingReview ? 'Enviando...' : 'Enviar Avaliação'}
+                                {product.countInStock === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
                             </button>
-                        </form>
-                    ) : (
-                        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-                            <p>
-                                Por favor, <Link to="/login" className="font-bold underline">faça login</Link> para escrever uma avaliação.
-                            </p>
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
