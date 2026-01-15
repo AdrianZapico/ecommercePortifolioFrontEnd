@@ -1,95 +1,64 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Product } from "../types/types";
+import { createSlice } from '@reduxjs/toolkit';
 
-export interface CartItem extends Pick<Product, '_id' | 'name' | 'image' | 'price' | 'countInStock'> {
-    qty: number;
-}
-
-// 1. Definimos o tipo do Endereço
-export interface ShippingAddress {
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
-}
-
-interface CartState {
-    cartItems: CartItem[];
-    shippingAddress: ShippingAddress; // <--- 2. Adicionado aqui
-    paymentMethod: string;
-    itemsPrice: string;
-    shippingPrice: string;
-    taxPrice: string;
-    totalPrice: string;
-}
-
-const initialState: CartState = localStorage.getItem("cart")
-    ? JSON.parse(localStorage.getItem("cart")!)
-    : {
-        cartItems: [],
-        shippingAddress: {}, // Começa vazio
-        paymentMethod: 'PayPal',
-        itemsPrice: "0", shippingPrice: "0", taxPrice: "0", totalPrice: "0"
-    };
-
-const addDecimals = (num: number) => {
-    return (Math.round(num * 100) / 100).toFixed(2);
-};
-
-const updateCartPrices = (state: CartState) => {
-    const itemsPrice = state.cartItems.reduce(
-        (acc, item) => acc + item.price * item.qty,
-        0
-    );
-    state.itemsPrice = addDecimals(itemsPrice);
-
-    const shippingPrice = itemsPrice > 100 ? 0 : 10;
-    state.shippingPrice = addDecimals(shippingPrice);
-
-    const taxPrice = Number((0.15 * itemsPrice).toFixed(2));
-    state.taxPrice = addDecimals(taxPrice);
-
-    state.totalPrice = (
-        Number(itemsPrice) +
-        Number(shippingPrice) +
-        Number(taxPrice)
-    ).toFixed(2);
-
-    localStorage.setItem("cart", JSON.stringify(state));
-};
+// Tenta pegar do localStorage ou inicia vazio
+const initialState = localStorage.getItem('cart')
+    ? JSON.parse(localStorage.getItem('cart') as string)
+    : { cartItems: [], shippingAddress: {}, paymentMethod: 'PayPal' };
 
 const cartSlice = createSlice({
-    name: "cart",
+    name: 'cart',
     initialState,
     reducers: {
-        addToCart: (state, action: PayloadAction<CartItem>) => {
+        addToCart: (state, action) => {
             const item = action.payload;
-            const existItem = state.cartItems.find((x) => x._id === item._id);
+            const existItem = state.cartItems.find((x: any) => x._id === item._id);
 
             if (existItem) {
-                state.cartItems = state.cartItems.map((x) =>
+                state.cartItems = state.cartItems.map((x: any) =>
                     x._id === existItem._id ? item : x
                 );
             } else {
                 state.cartItems = [...state.cartItems, item];
             }
-            updateCartPrices(state);
+
+            // Recalcula totais (Lógica simplificada)
+            state.itemsPrice = state.cartItems.reduce((acc: any, item: any) => acc + item.price * item.qty, 0);
+            state.shippingPrice = state.itemsPrice > 100 ? 0 : 10;
+            state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2));
+            state.totalPrice = (
+                Number(state.itemsPrice) +
+                Number(state.shippingPrice) +
+                Number(state.taxPrice)
+            ).toFixed(2);
+
+            localStorage.setItem('cart', JSON.stringify(state));
         },
-        removeFromCart: (state, action: PayloadAction<string>) => {
-            state.cartItems = state.cartItems.filter((x) => x._id !== action.payload);
-            updateCartPrices(state);
+        removeFromCart: (state, action) => {
+            state.cartItems = state.cartItems.filter((x: any) => x._id !== action.payload);
+            localStorage.setItem('cart', JSON.stringify(state));
         },
-        // 3. Nova ação para salvar endereço
-        saveShippingAddress: (state, action: PayloadAction<ShippingAddress>) => {
+        saveShippingAddress: (state, action) => {
             state.shippingAddress = action.payload;
-            updateCartPrices(state); // Salva no LocalStorage
+            localStorage.setItem('cart', JSON.stringify(state));
         },
-        savePaymentMethod: (state, action: PayloadAction<string>) => {
+        savePaymentMethod: (state, action) => {
             state.paymentMethod = action.payload;
-            localStorage.setItem("cart", JSON.stringify(state));
+            localStorage.setItem('cart', JSON.stringify(state));
+        },
+        // AQUI ESTÁ A FUNÇÃO QUE FALTAVA:
+        clearCartItems: (state) => {
+            state.cartItems = [];
+            localStorage.setItem('cart', JSON.stringify(state));
         },
     },
 });
 
-export const { addToCart, removeFromCart, saveShippingAddress, savePaymentMethod } = cartSlice.actions;
+export const {
+    addToCart,
+    removeFromCart,
+    saveShippingAddress,
+    savePaymentMethod,
+    clearCartItems // <--- Agora ela existe!
+} = cartSlice.actions;
+
 export default cartSlice.reducer;

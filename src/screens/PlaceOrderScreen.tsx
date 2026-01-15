@@ -1,19 +1,20 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import axios from 'axios';
-import { toast } from 'react-toastify'; // Opcional: para mensagens bonitas, senão usamos alert
-import type { RootState } from '../store';
-// import { clearCartItems } from '../slices/cartSlice'; // Faremos isso depois
+import { useCreateOrderMutation } from '../slices/ordersApiSlice';// <--- Importamos a conexão certa
+import { clearCartItems } from '../slices/cartSlice'; // <--- Ação para limpar carrinho
+import CheckoutSteps from '../components/CheckoutSteps';
+import Message from '../components/Message';
+import Loader from '../components/Loader';
 
 const PlaceOrderScreen = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const cart = useSelector((state: any) => state.cart);
 
-    const cart = useSelector((state: RootState) => state.cart);
-    const { userInfo } = useSelector((state: RootState) => state.auth);
+    // Hook do Redux para criar pedido
+    const [createOrder, { isLoading, error }] = useCreateOrderMutation();
 
-    // Redireciona se não tiver endereço
     useEffect(() => {
         if (!cart.shippingAddress.address) {
             navigate('/shipping');
@@ -24,128 +25,120 @@ const PlaceOrderScreen = () => {
 
     const placeOrderHandler = async () => {
         try {
-            // 1. Prepara o cabeçalho com o Token
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${userInfo?.token}`,
-                },
-            };
+            // Tenta criar o pedido na API certa
+            const res = await createOrder({
+                orderItems: cart.cartItems,
+                shippingAddress: cart.shippingAddress,
+                paymentMethod: cart.paymentMethod,
+                itemsPrice: cart.itemsPrice,
+                shippingPrice: cart.shippingPrice,
+                taxPrice: cart.taxPrice,
+                totalPrice: cart.totalPrice,
+            }).unwrap();
 
-            // 2. Envia os dados para o Backend
-            const { data } = await axios.post(
-                '/api/orders',
-                {
-                    orderItems: cart.cartItems,
-                    shippingAddress: cart.shippingAddress,
-                    paymentMethod: cart.paymentMethod,
-                    itemsPrice: cart.itemsPrice,
-                    shippingPrice: cart.shippingPrice,
-                    taxPrice: cart.taxPrice,
-                    totalPrice: cart.totalPrice,
-                },
-                config
-            );
-
-            // 3. Sucesso! Redireciona para os detalhes do pedido criado
-            // dispatch(clearCartItems()); // Limparemos o carrinho depois
-            navigate(`/order/${data._id}`);
-
-        } catch (error: any) {
-            const msg = error.response?.data?.message || error.message;
-            alert(msg); // Ou use toast.error(msg)
+            // Se der certo, limpa o carrinho e vai para a tela do pedido
+            dispatch(clearCartItems());
+            navigate(`/order/${res._id}`);
+        } catch (err) {
+            console.log(err);
         }
     };
 
     return (
-        <div className="container mx-auto mt-10 px-4">
-            {/* STEPS WIZARD (Barra de progresso visual simples) */}
-            <div className="flex justify-center mb-8 text-sm">
-                <span className="text-green-600 font-bold mr-4">Login ✅</span>
-                <span className="text-green-600 font-bold mr-4">Endereço ✅</span>
-                <span className="text-green-600 font-bold mr-4">Pagamento ✅</span>
-                <span className="font-bold underline">Revisão</span>
-            </div>
+        <div className="container mx-auto px-4 py-8">
+            <CheckoutSteps step1 step2 step3 step4 />
 
-            <div className="flex flex-col md:flex-row gap-8">
-                {/* COLUNA DA ESQUERDA: DETALHES */}
-                <div className="md:w-2/3">
-                    <div className="bg-white p-6 rounded shadow-sm mb-4">
-                        <h2 className="text-2xl font-semibold mb-4 text-slate-700">Entrega</h2>
-                        <p className="mb-2">
-                            <strong>Endereço: </strong>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
+                {/* Lado Esquerdo: Resumo dos Dados */}
+                <div className="md:col-span-2 space-y-6">
+
+                    {/* Endereço */}
+                    <div className="bg-white p-6 rounded shadow-sm border">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Entrega</h2>
+                        <p className="text-slate-600">
+                            <strong className="text-slate-800">Endereço: </strong>
                             {cart.shippingAddress.address}, {cart.shippingAddress.city}{' '}
                             {cart.shippingAddress.postalCode}, {cart.shippingAddress.country}
                         </p>
                     </div>
 
-                    <div className="bg-white p-6 rounded shadow-sm mb-4">
-                        <h2 className="text-2xl font-semibold mb-4 text-slate-700">Pagamento</h2>
-                        <p>
-                            <strong>Método: </strong>
-                            {cart.paymentMethod}
-                        </p>
+                    {/* Pagamento */}
+                    <div className="bg-white p-6 rounded shadow-sm border">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Pagamento</h2>
+                        <strong className="text-slate-800">Método: </strong>
+                        {cart.paymentMethod}
                     </div>
 
-                    <div className="bg-white p-6 rounded shadow-sm mb-4">
-                        <h2 className="text-2xl font-semibold mb-4 text-slate-700">Itens do Pedido</h2>
+                    {/* Itens */}
+                    <div className="bg-white p-6 rounded shadow-sm border">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Itens do Pedido</h2>
                         {cart.cartItems.length === 0 ? (
-                            <p>Seu carrinho está vazio</p>
+                            <Message>Seu carrinho está vazio</Message>
                         ) : (
-                            <ul>
-                                {cart.cartItems.map((item, index) => (
-                                    <li key={index} className="flex items-center justify-between border-b py-2">
-                                        <div className="flex items-center">
-                                            <img
-                                                src={item.image}
-                                                alt={item.name}
-                                                className="w-12 h-12 object-cover rounded mr-4"
-                                            />
-                                            <Link to={`/product/${item._id}`} className="text-slate-900 hover:underline">
+                            <div className="space-y-4">
+                                {cart.cartItems.map((item: any, index: number) => (
+                                    <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0">
+                                        <div className="flex items-center space-x-4">
+                                            <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                                            <Link to={`/product/${item._id}`} className="text-slate-700 hover:text-slate-900 font-medium">
                                                 {item.name}
                                             </Link>
                                         </div>
-                                        <div className="text-gray-600">
-                                            {item.qty} x ${item.price} = <strong>${(item.qty * item.price).toFixed(2)}</strong>
+                                        <div className="text-slate-600">
+                                            {item.qty} x ${item.price} = <span className="font-bold text-slate-800">${(item.qty * item.price).toFixed(2)}</span>
                                         </div>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* COLUNA DA DIREITA: RESUMO FINANCEIRO */}
-                <div className="md:w-1/3">
-                    <div className="bg-white p-6 rounded shadow-lg border border-gray-200">
-                        <h2 className="text-2xl font-bold mb-6 text-slate-800 text-center">Resumo do Pedido</h2>
+                {/* Lado Direito: Resumo de Valores */}
+                <div className="md:col-span-1">
+                    <div className="bg-white p-6 rounded shadow-md border">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2 text-center">Resumo do Pedido</h2>
 
-                        <div className="flex justify-between mb-2">
-                            <span>Itens</span>
-                            <span>${cart.itemsPrice}</span>
+                        <div className="space-y-3 text-slate-700">
+                            <div className="flex justify-between">
+                                <span>Itens</span>
+                                <span>${cart.itemsPrice}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Frete</span>
+                                <span>${cart.shippingPrice}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Taxa</span>
+                                <span>${cart.taxPrice}</span>
+                            </div>
+                            <div className="flex justify-between text-xl font-bold text-slate-900 border-t pt-2 mt-2">
+                                <span>Total</span>
+                                <span>${cart.totalPrice}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between mb-2">
-                            <span>Frete</span>
-                            <span>${cart.shippingPrice}</span>
-                        </div>
-                        <div className="flex justify-between mb-2">
-                            <span>Taxa</span>
-                            <span>${cart.taxPrice}</span>
-                        </div>
-                        <div className="border-t my-2"></div>
-                        <div className="flex justify-between mb-6 font-bold text-lg">
-                            <span>Total</span>
-                            <span>${cart.totalPrice}</span>
+
+                        <div className="mt-4">
+                            {error && (
+                                <Message variant='danger'>
+                                    {(error as any)?.data?.message || 'Erro ao criar pedido'}
+                                </Message>
+                            )}
                         </div>
 
                         <button
-                            type="button"
-                            className="w-full bg-slate-900 text-white font-bold py-3 rounded hover:bg-slate-800 transition disabled:opacity-50"
-                            disabled={cart.cartItems.length === 0}
+                            type='button'
+                            className={`w-full mt-6 py-3 rounded font-bold text-white transition-colors ${cart.cartItems.length === 0 || isLoading
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-slate-800 hover:bg-slate-700'
+                                }`}
+                            disabled={cart.cartItems.length === 0 || isLoading}
                             onClick={placeOrderHandler}
                         >
-                            Confirmar Pedido
+                            {isLoading ? 'Processando...' : 'Confirmar Pedido'}
                         </button>
+
+                        {isLoading && <div className="mt-4"><Loader /></div>}
                     </div>
                 </div>
             </div>
