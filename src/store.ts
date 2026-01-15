@@ -1,15 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiSlice } from './slices/apiSlice';
-import authReducer from './slices/authSlice'; // Se tiver authSlice
-import cartSliceReducer from './slices/cartSlice'; // Se tiver cartSlice
+import authSliceReducer from './slices/authSlice';
+import cartSliceReducer from './slices/cartSlice';
 
 const store = configureStore({
     reducer: {
+        // 1. AQUI: Conectamos a API no Redux
         [apiSlice.reducerPath]: apiSlice.reducer,
-        // Adicione seus outros reducers aqui se existirem:
-        auth: authReducer,
+
+        // Seus outros reducers (Login, Carrinho)
+        auth: authSliceReducer,
         cart: cartSliceReducer,
     },
+    // 2. AQUI: O Middleware é OBRIGATÓRIO para o useGetProductsQuery funcionar
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(apiSlice.middleware),
     devTools: true,
