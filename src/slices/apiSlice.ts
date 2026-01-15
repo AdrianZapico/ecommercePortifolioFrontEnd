@@ -1,12 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { BASE_URL } from '../constants';
 
 export const apiSlice = createApi({
-    // Conexão com o Render
-    baseQuery: fetchBaseQuery({ baseUrl: 'https://ecommerceportifolio.onrender.com' }),
-
+    baseQuery: fetchBaseQuery({
+        baseUrl: 'https://ecommerceportifolio.onrender.com',
+        // 👇 AQUI ESTÁ A MÁGICA:
+        // Isso obriga o navegador a enviar o cookie de login para o Render
+        credentials: 'include',
+    }),
     tagTypes: ['Product', 'Order', 'User'],
-
     endpoints: (builder) => ({
         // 1. Busca lista de produtos
         getProducts: builder.query({
@@ -25,7 +26,7 @@ export const apiSlice = createApi({
             keepUnusedDataFor: 5,
         }),
 
-        // 3. NOVO: Busca os produtos em destaque (Isso corrige o erro vermelho)
+        // 3. Busca destaques
         getTopProducts: builder.query({
             query: () => ({
                 url: '/api/products/top',
@@ -35,7 +36,6 @@ export const apiSlice = createApi({
     }),
 });
 
-// Exportamos o hook novo 'useGetTopProductsQuery' aqui embaixo
 export const {
     useGetProductsQuery,
     useGetProductDetailsQuery,
