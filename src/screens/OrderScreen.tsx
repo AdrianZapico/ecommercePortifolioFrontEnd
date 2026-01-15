@@ -1,66 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
-import type { RootState } from '../store';
+import { toast } from 'react-toastify'; // Opcional: para notificações bonitas
+import Loader from '../components/Loader';
+import Message from '../components/Message';
+import {
+    useGetOrderDetailsQuery,
+    useDeliverOrderMutation
+} from '../slices/ordersApiSlice';
 
 const OrderScreen = () => {
-    const { id: orderId } = useParams(); // Pega o ID da URL
+    const { id: orderId } = useParams();
 
-    // Estados locais para controlar o carregamento e os dados
-    const [order, setOrder] = useState<any>(null); // Usando any por simplicidade agora
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    // 1. Hook para buscar dados (substitui useEffect e axios.get)
+    const {
+        data: order,
+        refetch,
+        isLoading,
+        error
+    } = useGetOrderDetailsQuery(orderId);
 
-    const { userInfo } = useSelector((state: RootState) => state.auth);
+    // 2. Hook para entregar pedido (substitui axios.put)
+    const [deliverOrder, { isLoading: loadingDeliver }] = useDeliverOrderMutation();
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${userInfo?.token}`,
-                    },
-                };
-
-                const { data } = await axios.get(`/api/orders/${orderId}`, config);
-                setOrder(data);
-                setLoading(false);
-            } catch (err: any) {
-                setError(err.response?.data?.message || err.message);
-                setLoading(false);
-            }
-        };
-
-        if (userInfo && orderId) {
-            fetchOrder();
-        }
-    }, [orderId, userInfo]);
+    const { userInfo } = useSelector((state: any) => state.auth);
 
     const deliverHandler = async () => {
         try {
-            const config = {
-                headers: { Authorization: `Bearer ${userInfo?.token}` },
-            };
-            await axios.put(`/api/orders/${order._id}/deliver`, {}, config);
-
-            // Recarrega a tela para mostrar o novo status
-            window.location.reload();
+            await deliverOrder(orderId);
+            refetch(); // Força a atualização dos dados na tela sem recarregar a página
+            toast.success('Pedido marcado como entregue');
         } catch (err: any) {
-            alert(err.response?.data?.message || err.message);
+            toast.error(err?.data?.message || err.message);
         }
     };
 
-    // Se estiver carregando
-    if (loading) return <h2 className="text-center mt-10">Carregando pedido...</h2>;
-
-    // Se der erro
-    if (error) return <div className="text-red-600 text-center mt-10">{error}</div>;
-
-    // Se carregou mas não tem pedido
-    if (!order) return <div className="text-center mt-10">Pedido não encontrado</div>;
-
-    return (
+    // Renderização condicional baseada no status do Hook
+    return isLoading ? (
+        <Loader />
+    ) : error ? (
+        <Message variant='danger'>
+            {(error as any)?.data?.message || 'Erro ao carregar pedido'}
+        </Message>
+    ) : (
         <div className="container mx-auto mt-10 px-4">
             <h1 className="text-2xl font-bold mb-6 text-slate-800">Pedido: {order._id}</h1>
 
@@ -71,31 +53,34 @@ const OrderScreen = () => {
                     {/* ENVIO */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Envio</h2>
-                        <p>
+                        <p className="mb-2">
                             <strong>Nome: </strong>
                             {order.user ? order.user.name : 'Usuário Deletado'}
                         </p>
 
-                        <p>
+                        <p className="mb-2">
                             <strong>Email: </strong>
                             {order.user ? (
-                                <a href={`mailto:${order.user.email}`}>{order.user.email}</a>
+                                <a href={`mailto:${order.user.email}`} className="text-blue-600 hover:underline">
+                                    {order.user.email}
+                                </a>
                             ) : (
                                 'Email não disponível'
                             )}
-                        </p><p className="mb-4">
+                        </p>
+
+                        <p className="mb-4">
                             <strong>Endereço: </strong>
                             {order.shippingAddress.address}, {order.shippingAddress.city}{' '}
                             {order.shippingAddress.postalCode}, {order.shippingAddress.country}
                         </p>
+
                         {order.isDelivered ? (
-                            <div className="bg-green-100 text-green-800 px-4 py-2 rounded">
-                                Entregue em {order.deliveredAt?.substring(0, 10)}
-                            </div>
+                            <Message variant='success'>
+                                Entregue em {order.deliveredAt.substring(0, 10)}
+                            </Message>
                         ) : (
-                            <div className="bg-red-100 text-red-800 px-4 py-2 rounded">
-                                Não Entregue
-                            </div>
+                            <Message variant='danger'>Não Entregue</Message>
                         )}
                     </div>
 
@@ -107,74 +92,83 @@ const OrderScreen = () => {
                             {order.paymentMethod}
                         </p>
                         {order.isPaid ? (
-                            <div className="bg-green-100 text-green-800 px-4 py-2 rounded">
-                                Pago em {order.paidAt?.substring(0, 10)}
-                            </div>
+                            <Message variant='success'>
+                                Pago em {order.paidAt.substring(0, 10)}
+                            </Message>
                         ) : (
-                            <div className="bg-red-100 text-red-800 px-4 py-2 rounded">
-                                Não Pago
-                            </div>
+                            <Message variant='danger'>Não Pago</Message>
                         )}
                     </div>
 
                     {/* ITENS */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Itens do Pedido</h2>
-                        <ul>
-                            {order.orderItems.map((item: any, index: number) => (
-                                <li key={index} className="flex items-center justify-between border-b py-2">
-                                    <div className="flex items-center">
-                                        <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            className="w-12 h-12 object-cover rounded mr-4"
-                                        />
-                                        <Link to={`/product/${item.product}`} className="text-slate-900 hover:underline">
-                                            {item.name}
-                                        </Link>
-                                    </div>
-                                    <div className="text-gray-600">
-                                        {item.qty} x ${item.price} = <strong>${(item.qty * item.price).toFixed(2)}</strong>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                        {order.orderItems.length === 0 ? (
+                            <Message>Pedido vazio</Message>
+                        ) : (
+                            <ul>
+                                {order.orderItems.map((item: any, index: number) => (
+                                    <li key={index} className="flex items-center justify-between border-b py-2 last:border-0">
+                                        <div className="flex items-center">
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="w-12 h-12 object-cover rounded mr-4"
+                                            />
+                                            <Link to={`/product/${item.product}`} className="text-slate-900 hover:underline font-medium">
+                                                {item.name}
+                                            </Link>
+                                        </div>
+                                        <div className="text-gray-600">
+                                            {item.qty} x ${item.price} = <strong>${(item.qty * item.price).toFixed(2)}</strong>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
 
                 {/* COLUNA DIREITA: RESUMO */}
                 <div className="md:w-1/3">
-                    <div className="bg-white p-6 rounded shadow-lg border border-gray-200">
-                        <h2 className="text-2xl font-bold mb-6 text-slate-800 text-center">Resumo do Pedido</h2>
-                        <div className="flex justify-between mb-2">
-                            <span>Itens</span>
-                            <span>${order.itemsPrice}</span>
-                        </div>
-                        <div className="flex justify-between mb-2">
-                            <span>Frete</span>
-                            <span>${order.shippingPrice}</span>
-                        </div>
-                        <div className="flex justify-between mb-2">
-                            <span>Taxa</span>
-                            <span>${order.taxPrice}</span>
-                        </div>
-                        <div className="border-t my-2"></div>
-                        <div className="flex justify-between mb-6 font-bold text-lg">
-                            <span>Total</span>
-                            <span>${order.totalPrice}</span>
+                    <div className="bg-white p-6 rounded shadow-lg border border-gray-200 sticky top-4">
+                        <h2 className="text-2xl font-bold mb-6 text-slate-800 text-center">Resumo</h2>
+
+                        <div className="space-y-3 text-slate-700">
+                            <div className="flex justify-between">
+                                <span>Itens</span>
+                                <span>${order.itemsPrice}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Frete</span>
+                                <span>${order.shippingPrice}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Taxa</span>
+                                <span>${order.taxPrice}</span>
+                            </div>
+                            <div className="border-t my-2"></div>
+                            <div className="flex justify-between font-bold text-lg text-slate-900">
+                                <span>Total</span>
+                                <span>${order.totalPrice}</span>
+                            </div>
                         </div>
 
-                        {/* Aqui entraremos com o botão do PayPal no futuro */}
+                        {/* Espaço reservado para botão PayPal */}
                         {!order.isPaid && (
-                            <div className="bg-gray-100 p-3 rounded text-center text-sm text-gray-500">
-                                Botão de Pagamento virá aqui
+                            <div className='mt-4 p-3 bg-yellow-50 text-yellow-800 text-center rounded border border-yellow-200'>
+                                Botão do PayPal virá aqui
                             </div>
                         )}
+
+                        {/* Botão de Marcar como Entregue (Apenas Admin) */}
+                        {loadingDeliver && <Loader />}
+
                         {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
                             <div className="mt-4">
                                 <button
                                     type="button"
-                                    className="w-full bg-slate-800 text-white font-bold py-2 px-4 rounded hover:bg-slate-700 transition"
+                                    className="w-full bg-slate-800 text-white font-bold py-3 px-4 rounded hover:bg-slate-700 transition duration-300 shadow-md"
                                     onClick={deliverHandler}
                                 >
                                     Marcar como Entregue

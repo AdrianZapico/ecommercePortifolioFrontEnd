@@ -1,4 +1,5 @@
 import { apiSlice } from './apiSlice';
+import { ORDERS_URL, PAYPAL_URL } from '../constants'; // Ou use as strings diretas se preferir
 
 export const ordersApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
@@ -19,7 +20,7 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
             query: ({ orderId, details }) => ({
                 url: `/api/orders/${orderId}/pay`,
                 method: 'PUT',
-                body: details,
+                body: { ...details },
             }),
         }),
         getMyOrders: builder.query({
@@ -28,6 +29,14 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
             }),
             keepUnusedDataFor: 5,
         }),
+        // 👇 ADICIONE ESTA PARTE NOVA 👇
+        deliverOrder: builder.mutation({
+            query: (orderId) => ({
+                url: `/api/orders/${orderId}/deliver`,
+                method: 'PUT',
+            }),
+        }),
+        // 👆 FIM DA PARTE NOVA 👆
     }),
 });
 
@@ -36,4 +45,5 @@ export const {
     useGetOrderDetailsQuery,
     usePayOrderMutation,
     useGetMyOrdersQuery,
+    useDeliverOrderMutation, // <--- Não esqueça de exportar o hook novo
 } = ordersApiSlice;
