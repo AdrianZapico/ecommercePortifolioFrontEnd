@@ -1,75 +1,63 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useGetProductsQuery } from '../slices/apiSlice';
 import Product from '../components/Product';
+import Loader from '../components/Loader';// <--- Agora existe
+import Message from '../components/Message'; // <--- Agora existe
+import Paginate from '../components/Paginate';
 import ProductCarousel from '../components/ProductCarousel';
-import Paginate from '../components/Paginate'; // <--- 1. Importe
-import type { Product as ProductType } from '../types/types';
+
 
 const HomeScreen = () => {
-    const [products, setProducts] = useState<ProductType[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const { pageNumber, keyword } = useParams();
 
-    // Estados novos para paginação
-    const [page, setPage] = useState(1);
-    const [pages, setPages] = useState(1);
-
-    // Agora pegamos também o pageNumber da URL
-    const { keyword, pageNumber } = useParams();
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                // Passamos keyword E pageNumber na URL
-                const { data } = await axios.get(
-                    `/api/products?keyword=${keyword || ''}&pageNumber=${pageNumber || 1}`
-                );
-
-                // O Backend agora retorna { products, page, pages }
-                setProducts(data.products);
-                setPage(data.page);
-                setPages(data.pages);
-
-                setLoading(false);
-            } catch (err: any) {
-                setError(err.response?.data?.message || err.message);
-                setLoading(false);
-            }
-        };
-
-        fetchProducts();
-    }, [keyword, pageNumber]); // <--- Roda quando muda a busca ou a página
+    // Hook do Redux (Conectado ao Render)
+    const { data, isLoading, error } = useGetProductsQuery({
+        keyword,
+        pageNumber: pageNumber || 1
+    });
 
     return (
         <>
             {!keyword ? (
                 <ProductCarousel />
             ) : (
-                <Link to="/" className="bg-slate-200 px-4 py-2 rounded mb-4 inline-block hover:bg-slate-300">
+                <Link to='/' className='bg-slate-200 px-4 py-2 rounded mb-4 inline-block hover:bg-slate-300'>
                     &larr; Voltar
                 </Link>
             )}
 
-            <h1 className="text-3xl font-bold text-slate-800 mb-6 mt-4">
-                {keyword ? `Resultados para: "${keyword}"` : 'Últimos Produtos'}
-            </h1>
-
-            {loading ? (
-                <p>Carregando...</p>
+            {isLoading ? (
+                <Loader />
             ) : error ? (
-                <div className="bg-red-100 p-3 rounded">{error}</div>
+                <Message variant='danger'>
+                    {'data' in error
+                        ? (error as any).data.message
+                        : (error as any).message || 'Erro desconhecido'
+                    }
+                </Message>
             ) : (
                 <>
+                    {/* Se tiver o componente Meta, descomente abaixo */}
+                    {/* <Meta /> */}
+
+                    <h1 className="text-3xl font-bold text-slate-800 mb-6 mt-4">
+                        Latest Products
+                    </h1>
+
+                    {/* Grid responsivo com Tailwind (Substitui Row/Col do Bootstrap) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {products.map((product) => (
+                        {data?.products.map((product: any) => (
                             <Product key={product._id} product={product} />
                         ))}
                     </div>
 
-                    {/* Adiciona o componente de paginação no final */}
-                    <Paginate pages={pages} page={page} keyword={keyword ? keyword : ''} />
+                    <div className="mt-8">
+                        <Paginate
+                            pages={data?.pages}
+                            page={data?.page}
+                            keyword={keyword ? keyword : ''}
+                        />
+                    </div>
                 </>
             )}
         </>
