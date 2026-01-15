@@ -1,33 +1,24 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import axios from 'axios';
-import { setCredentials } from '../slices/authSlice';
-import type { RootState } from '../store';
-import { FaCheck, FaTimes } from 'react-icons/fa'; // Importando ícones para feedback visual
+import Loader from '../components/Loader';
+import Message from '../components/Message';
+import { useRegisterMutation } from '../slices/usersApiSlice'; // <--- Hook de Registro
+import { setCredentials } from '../slices/authSlice';       // <--- Ação de salvar login
 
 const RegisterScreen = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
-    // --- NOVOS ESTADOS PARA VALIDAÇÃO DE SENHA ---
-    const [passwordFocus, setPasswordFocus] = useState(false);
-    const [validations, setValidations] = useState({
-        minLength: false,
-        hasUpper: false,
-        hasLower: false,
-        hasNumber: false,
-        hasSymbol: false,
-    });
-    // ---------------------------------------------
+    const [message, setMessage] = useState<string | null>(null);
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { userInfo } = useSelector((state: RootState) => state.auth);
+    const [register, { isLoading, error }] = useRegisterMutation();
+
+    const { userInfo } = useSelector((state: any) => state.auth);
 
     const { search } = useLocation();
     const sp = new URLSearchParams(search);
@@ -39,149 +30,115 @@ const RegisterScreen = () => {
         }
     }, [navigate, redirect, userInfo]);
 
-    // --- FUNÇÃO QUE VALIDA A SENHA EM TEMPO REAL ---
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setPassword(val);
-
-        setValidations({
-            minLength: val.length >= 8,
-            hasUpper: /[A-Z]/.test(val),
-            hasLower: /[a-z]/.test(val),
-            hasNumber: /[0-9]/.test(val),
-            // MUDANÇA AQUI: Aceita qualquer caractere especial (incluindo underline, traço, espaço, etc)
-            hasSymbol: /[^A-Za-z0-9]/.test(val),
-        });
-    };
-    // -----------------------------------------------
-
-    const submitHandler = async (e: FormEvent) => {
+    const submitHandler = async (e: any) => {
         e.preventDefault();
 
-        // Verificação Final antes de enviar
-        const allValid = Object.values(validations).every(Boolean);
-
-        if (!allValid) {
-            toast.error('A senha não atende aos requisitos de segurança');
-            return;
-        }
-
+        // 1. Validação local: Senhas conferem?
         if (password !== confirmPassword) {
-            toast.error('As senhas não conferem');
+            setMessage('As senhas não conferem');
             return;
+        } else {
+            setMessage(null);
         }
 
         try {
-            const { data } = await axios.post('/api/users', { name, email, password });
-            dispatch(setCredentials({ ...data }));
+            // 2. Tenta registrar no servidor Render
+            const res = await register({ name, email, password }).unwrap();
+
+            // 3. Se der certo, já faz o login automático
+            dispatch(setCredentials({ ...res }));
             navigate(redirect);
-            toast.success('Cadastro realizado com sucesso!');
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || err.message);
+        } catch (err) {
+            console.log(err);
         }
     };
 
     return (
-        <div className="container mx-auto mt-10 px-4 flex justify-center">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-                <h1 className="text-3xl font-bold mb-6 text-center text-slate-800">Criar Conta</h1>
+        <div className="flex justify-center items-center min-h-[50vh] mt-10">
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+                <h1 className="text-3xl font-bold text-center text-slate-800 mb-6">Cadastrar</h1>
+
+                {/* Exibe erro de senhas diferentes OU erro do servidor */}
+                {message && <Message variant='danger'>{message}</Message>}
+                {error && (
+                    <Message variant='danger'>
+                        {(error as any)?.data?.message || (error as any)?.error || 'Erro no registro'}
+                    </Message>
+                )}
+
+                {isLoading && <Loader />}
 
                 <form onSubmit={submitHandler}>
                     <div className="mb-4">
-                        <label className="block text-gray-700 font-bold mb-2">Nome</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="name">
+                            Nome
+                        </label>
                         <input
                             type="text"
+                            id="name"
                             placeholder="Digite seu nome"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:border-slate-500"
-                            required
                         />
                     </div>
 
                     <div className="mb-4">
-                        <label className="block text-gray-700 font-bold mb-2">Email</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="email">
+                            Email
+                        </label>
                         <input
                             type="email"
+                            id="email"
                             placeholder="Digite seu email"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:border-slate-500"
-                            required
                         />
                     </div>
 
-                    {/* --- CAMPO DE SENHA COM VALIDAÇÃO VISUAL --- */}
                     <div className="mb-4">
-                        <label className="block text-gray-700 font-bold mb-2">Senha</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="password">
+                            Senha
+                        </label>
                         <input
                             type="password"
+                            id="password"
                             placeholder="Digite sua senha"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={password}
-                            onChange={handlePasswordChange}
-                            onFocus={() => setPasswordFocus(true)}
-                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-slate-500 ${password && !Object.values(validations).every(Boolean) ? 'border-red-500' : ''
-                                }`}
-                            required
+                            onChange={(e) => setPassword(e.target.value)}
                         />
-
-                        {/* Lista de requisitos que aparece quando o usuário digita */}
-                        {passwordFocus && (
-                            <div className="mt-2 text-sm bg-slate-50 p-3 rounded border border-slate-200 transition-all">
-                                <p className="font-bold text-gray-600 mb-2">Sua senha deve conter:</p>
-                                <ul className="space-y-1">
-                                    <li className={`flex items-center ${validations.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {validations.minLength ? <FaCheck className="mr-2" /> : <FaTimes className="mr-2" />} Mínimo 8 caracteres
-                                    </li>
-                                    <li className={`flex items-center ${validations.hasUpper ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {validations.hasUpper ? <FaCheck className="mr-2" /> : <FaTimes className="mr-2" />} Letra Maiúscula
-                                    </li>
-                                    <li className={`flex items-center ${validations.hasLower ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {validations.hasLower ? <FaCheck className="mr-2" /> : <FaTimes className="mr-2" />} Letra Minúscula
-                                    </li>
-                                    <li className={`flex items-center ${validations.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {validations.hasNumber ? <FaCheck className="mr-2" /> : <FaTimes className="mr-2" />} Número
-                                    </li>
-                                    <li className={`flex items-center ${validations.hasSymbol ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {validations.hasSymbol ? <FaCheck className="mr-2" /> : <FaTimes className="mr-2" />} Símbolo (!@#$...)
-                                    </li>
-                                </ul>
-                            </div>
-                        )}
                     </div>
-                    {/* ------------------------------------------- */}
 
                     <div className="mb-6">
-                        <label className="block text-gray-700 font-bold mb-2">Confirmar Senha</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="confirmPassword">
+                            Confirmar Senha
+                        </label>
                         <input
                             type="password"
+                            id="confirmPassword"
                             placeholder="Confirme sua senha"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:border-slate-500"
-                            required
                         />
                     </div>
 
                     <button
                         type="submit"
-                        // Desabilita o botão se a senha não for forte
-                        disabled={!Object.values(validations).every(Boolean)}
-                        className={`w-full font-bold py-3 px-4 rounded transition
-                ${Object.values(validations).every(Boolean)
-                                ? 'bg-slate-800 text-white hover:bg-slate-700'
-                                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                            }`}
+                        className="w-full bg-slate-800 text-white font-bold py-2 px-4 rounded hover:bg-slate-700 transition duration-300"
+                        disabled={isLoading}
                     >
                         Registrar
                     </button>
                 </form>
 
                 <div className="mt-4 text-center">
-                    <p className="text-gray-600">
+                    <p className="text-slate-600">
                         Já tem uma conta?{' '}
-                        <Link to={redirect ? `/login?redirect=${redirect}` : '/login'} className="text-slate-800 font-bold hover:underline">
-                            Faça Login
+                        <Link to={redirect ? `/login?redirect=${redirect}` : '/login'} className="text-blue-600 hover:text-blue-800 font-bold">
+                            Login
                         </Link>
                     </p>
                 </div>
