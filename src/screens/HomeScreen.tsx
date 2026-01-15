@@ -4,24 +4,29 @@ import Product from '../components/Product';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Paginate from '../components/Paginate';
-// import ProductCarousel from '../components/ProductCarousel'; // <--- 1. DESATIVADO: Ele estava causando o erro
+import ProductCarousel from '../components/ProductCarousel'; // <--- 1. Import reativado!
 
 const HomeScreen = () => {
     const { pageNumber, keyword } = useParams();
 
+    // Busca os produtos (conectado ao Render)
     const { data, isLoading, error } = useGetProductsQuery({
         keyword,
         pageNumber: pageNumber || 1
     });
 
     // --- PROTEÇÃO CONTRA TELA BRANCA ---
-    // Se data não chegar, garantimos que products seja uma lista vazia
+    // Garante que 'products' sempre seja um array, mesmo se a API falhar momentaneamente
     const products = data?.products || [];
 
     return (
         <>
-            {/* 2. LÓGICA DO CARROSSEL REMOVIDA TEMPORARIAMENTE PARA O SITE ABRIR */}
-            {keyword && (
+            {/* 2. LÓGICA DO CARROSSEL RESTAURADA */}
+            {/* Se não estamos pesquisando (sem keyword), mostra o Destaque.
+          Se estamos pesquisando, mostra o botão de Voltar. */}
+            {!keyword ? (
+                <ProductCarousel />
+            ) : (
                 <Link to='/' className='bg-slate-200 px-4 py-2 rounded mb-4 inline-block hover:bg-slate-300'>
                     &larr; Voltar
                 </Link>
@@ -42,7 +47,7 @@ const HomeScreen = () => {
                         Latest Products
                     </h1>
 
-                    {/* Se a lista estiver vazia, avisa o usuário em vez de quebrar */}
+                    {/* Aviso amigável caso a lista venha vazia */}
                     {products.length === 0 && <Message>Nenhum produto encontrado.</Message>}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

@@ -1,76 +1,44 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import Loader from './Loader';
+import Message from './Message';
+import { useGetTopProductsQuery } from '../slices/apiSlice';
 
 const ProductCarousel = () => {
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [currentIndex, setCurrentIndex] = useState(0);
+    // 1. Usa a função que criamos no passo anterior
+    const { data: products, isLoading, error } = useGetTopProductsQuery({});
 
-    useEffect(() => {
-        const fetchTopProducts = async () => {
-            try {
-                const { data } = await axios.get('/api/products/top');
-                setProducts(data);
-                setLoading(false);
-            } catch (err: any) {
-                setError(err.response?.data?.message || err.message);
-                setLoading(false);
-            }
-        };
+    return isLoading ? (
+        <Loader />
+    ) : error ? (
+        <Message variant='danger'>
+            {/* Proteção contra erros de conexão */}
+            {(error as any)?.data?.message || 'Erro ao carregar destaques'}
+        </Message>
+    ) : (
+        // 2. Visual em Tailwind (Rolagem Horizontal Suave)
+        <div className='mb-8'>
+            <h2 className='text-2xl font-bold text-slate-800 mb-4'>Destaques</h2>
 
-        fetchTopProducts();
-    }, []);
-
-    // Lógica de Rotação Automática (Timer)
-    useEffect(() => {
-        if (products.length > 0) {
-            const interval = setInterval(() => {
-                setCurrentIndex((prevIndex) =>
-                    prevIndex === products.length - 1 ? 0 : prevIndex + 1
-                );
-            }, 5000); // Troca a cada 5 segundos
-
-            return () => clearInterval(interval);
-        }
-    }, [products]);
-
-    // Se estiver carregando ou der erro, não mostra nada (para não quebrar o layout)
-    if (loading) return null;
-    if (error) return <div className="text-red-500 mb-4">Erro ao carregar destaques</div>;
-    if (products.length === 0) return null;
-
-    return (
-        <div className="relative w-full h-80 md:h-96 bg-slate-900 rounded-lg overflow-hidden shadow-xl mb-10 group">
-            {/* Imagem de Fundo */}
-            <Link to={`/product/${products[currentIndex]._id}`}>
-                <img
-                    src={products[currentIndex].image}
-                    alt={products[currentIndex].name}
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300"
-                />
-
-                {/* Texto Sobreposto (Legenda) */}
-                <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black to-transparent">
-                    <h2 className="text-white text-2xl md:text-4xl font-bold">
-                        {products[currentIndex].name} <span className="text-yellow-400">(${products[currentIndex].price})</span>
-                    </h2>
-                    <p className="text-gray-300 mt-2 line-clamp-2 w-3/4">
-                        {products[currentIndex].description}
-                    </p>
-                </div>
-            </Link>
-
-            {/* Indicadores (Bolinhas) */}
-            <div className="absolute bottom-4 right-4 flex gap-2">
-                {products.map((_, index) => (
-                    <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={`w-3 h-3 rounded-full transition-colors ${index === currentIndex ? 'bg-yellow-400' : 'bg-gray-500'
-                            }`}
-                    />
+            {/* Container de rolagem horizontal */}
+            <div className='flex overflow-x-auto space-x-6 pb-4 scrollbar-hide'>
+                {products?.map((product: any) => (
+                    <div key={product._id} className='min-w-[300px] bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300'>
+                        <Link to={`/product/${product._id}`}>
+                            <img
+                                src={product.image}
+                                alt={product.name}
+                                className='w-full h-48 object-cover rounded-t-lg'
+                            />
+                            <div className='p-4'>
+                                <h3 className='text-lg font-semibold text-slate-700 truncate'>
+                                    {product.name}
+                                </h3>
+                                <p className='text-slate-500 font-bold'>
+                                    ${product.price}
+                                </p>
+                            </div>
+                        </Link>
+                    </div>
                 ))}
             </div>
         </div>
