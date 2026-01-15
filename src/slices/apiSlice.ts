@@ -3,8 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'https://ecommerceportifolio.onrender.com',
-        // 👇 AQUI ESTÁ A MÁGICA:
-        // Isso obriga o navegador a enviar o cookie de login para o Render
+        // 👇 A MÁGICA: Permite que o cookie de login viaje entre Netlify e Render
         credentials: 'include',
     }),
     tagTypes: ['Product', 'Order', 'User'],
@@ -26,7 +25,7 @@ export const apiSlice = createApi({
             keepUnusedDataFor: 5,
         }),
 
-        // 3. Busca destaques
+        // 3. Busca destaques (Carrossel)
         getTopProducts: builder.query({
             query: () => ({
                 url: '/api/products/top',
