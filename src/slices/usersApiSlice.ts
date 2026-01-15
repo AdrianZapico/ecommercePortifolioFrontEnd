@@ -1,31 +1,32 @@
-import { USERS_URL } from '../constants';
 import { apiSlice } from './apiSlice';
+// Não precisamos mais importar a constante, pois vamos escrever direto para evitar erros
+// import { USERS_URL } from '../constants'; 
 
 export const usersApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         login: builder.mutation({
             query: (data) => ({
-                url: `${USERS_URL}/auth`,
+                url: '/api/users/auth', // Caminho direto e seguro
                 method: 'POST',
                 body: data,
             }),
         }),
         register: builder.mutation({
             query: (data) => ({
-                url: `${USERS_URL}`,
+                url: '/api/users', // Caminho direto
                 method: 'POST',
                 body: data,
             }),
         }),
         logout: builder.mutation({
             query: () => ({
-                url: `${USERS_URL}/logout`,
+                url: '/api/users/logout',
                 method: 'POST',
             }),
         }),
         profile: builder.mutation({
             query: (data) => ({
-                url: `${USERS_URL}/profile`,
+                url: '/api/users/profile',
                 method: 'PUT',
                 body: data,
             }),
@@ -33,7 +34,6 @@ export const usersApiSlice = apiSlice.injectEndpoints({
     }),
 });
 
-// Exporta os Hooks para usar nos componentes
 export const {
     useLoginMutation,
     useRegisterMutation,

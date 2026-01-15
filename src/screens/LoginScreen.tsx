@@ -1,82 +1,88 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import axios from 'axios';
-import { setCredentials } from '../slices/authSlice';
-import type { RootState } from '../store';
+import Loader from '../components/Loader';
+import Message from '../components/Message';
+import { useLoginMutation } from '../slices/usersApiSlice'; // <--- Importamos a ferramenta nova
+import { setCredentials } from '../slices/authSlice';       // <--- Importamos a ação de salvar os dados
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(''); // Para mostrar erros na tela
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // Lógica para saber para onde ir depois de logar (ex: voltar pro carrinho)
+    // Ferramenta do Redux (Conectada ao Render)
+    const [login, { isLoading, error }] = useLoginMutation();
+
+    const { userInfo } = useSelector((state: any) => state.auth);
+
     const { search } = useLocation();
     const sp = new URLSearchParams(search);
     const redirect = sp.get('redirect') || '/';
 
-    // Pega o usuário atual do Redux
-    const { userInfo } = useSelector((state: RootState) => state.auth);
-
+    // Se já estiver logado, redireciona
     useEffect(() => {
-        // Se já estiver logado, redireciona imediatamente
         if (userInfo) {
             navigate(redirect);
         }
     }, [navigate, redirect, userInfo]);
 
-    const submitHandler = async (e: FormEvent) => {
+    const submitHandler = async (e: any) => {
         e.preventDefault();
-        setError(''); // Limpa erros antigos
-
         try {
-            // 1. Faz o POST para o backend
-            const { data } = await axios.post('/api/users/auth', { email, password });
+            // Tenta fazer o login usando a API certa
+            const res = await login({ email, password }).unwrap();
 
-            // 2. Se der certo, salva no Redux
-            dispatch(setCredentials(data));
-
-            // 3. Redireciona
+            // Se der certo, salva os dados no navegador e redireciona
+            dispatch(setCredentials({ ...res }));
             navigate(redirect);
-        } catch (err: any) {
-            // Pega a mensagem de erro do backend ou usa uma genérica
-            const message = err.response?.data?.message || err.message;
-            setError(message);
+        } catch (err) {
+            // O erro agora é tratado automaticamente pelo componente Message abaixo
+            console.log(err);
         }
     };
 
     return (
-        <div className="flex justify-center items-center mt-10">
+        <div className="flex justify-center items-center min-h-[50vh] mt-10">
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-                <h1 className="text-3xl font-bold mb-6 text-center text-slate-800">Login</h1>
+                <h1 className="text-3xl font-bold text-center text-slate-800 mb-6">Login</h1>
 
+                {/* Mostra erro se houver */}
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
+                    <Message variant='danger'>
+                        {(error as any)?.data?.message || (error as any)?.error || 'Erro no Login'}
+                    </Message>
                 )}
+
+                {/* Mostra loader enquanto carrega */}
+                {isLoading && <Loader />}
 
                 <form onSubmit={submitHandler}>
                     <div className="mb-4">
-                        <label className="block text-gray-700 font-bold mb-2">Email</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="email">
+                            Email Address
+                        </label>
                         <input
                             type="email"
-                            placeholder="Digite seu email"
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-slate-500"
+                            id="email"
+                            placeholder="Enter email"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
 
                     <div className="mb-6">
-                        <label className="block text-gray-700 font-bold mb-2">Senha</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2" htmlFor="password">
+                            Password
+                        </label>
                         <input
                             type="password"
-                            placeholder="Digite sua senha"
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-slate-500"
+                            id="password"
+                            placeholder="Enter password"
+                            className="w-full px-3 py-2 border rounded shadow focus:outline-none focus:ring-2 focus:ring-slate-500"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
@@ -84,17 +90,18 @@ const LoginScreen = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-slate-900 text-white font-bold py-3 rounded hover:bg-slate-800 transition"
+                        className="w-full bg-slate-800 text-white font-bold py-2 px-4 rounded hover:bg-slate-700 transition duration-300"
+                        disabled={isLoading}
                     >
-                        Entrar
+                        Sign In
                     </button>
                 </form>
 
                 <div className="mt-4 text-center">
-                    <p className="text-gray-600">
-                        Novo cliente?{' '}
-                        <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} className="text-slate-900 font-bold hover:underline">
-                            Cadastre-se
+                    <p className="text-slate-600">
+                        New Customer?{' '}
+                        <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} className="text-blue-600 hover:text-blue-800 font-bold">
+                            Register
                         </Link>
                     </p>
                 </div>
