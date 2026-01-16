@@ -36,6 +36,12 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
                 method: 'PUT',
             }),
         }),
+        getOrders: builder.query({
+            query: () => ({
+                url: '/api/orders',
+            }),
+            keepUnusedDataFor: 5,
+        }),
         // 👆 FIM DA PARTE NOVA 👆
     }),
 });
@@ -45,5 +51,6 @@ export const {
     useGetOrderDetailsQuery,
     usePayOrderMutation,
     useGetMyOrdersQuery,
-    useDeliverOrderMutation, // <--- Não esqueça de exportar o hook novo
+    useDeliverOrderMutation,
+    useGetOrdersQuery,
 } = ordersApiSlice;
