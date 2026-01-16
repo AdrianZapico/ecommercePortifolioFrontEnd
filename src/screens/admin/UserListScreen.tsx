@@ -1,109 +1,95 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
-import type { RootState } from '../../store';
+import { FaTrash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import Message from '../../components/Message';
+import Loader from '../../components/Loader';
+import {
+    useGetUsersQuery,
+    useDeleteUserMutation
+} from '../../slices/usersApiSlice';
 
 const UserListScreen = () => {
-    const [users, setUsers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    // 1. Busca os dados usando Redux (Automaticamente trata loading e erro)
+    const { data: users, refetch, isLoading, error } = useGetUsersQuery({});
 
-    const navigate = useNavigate();
+    // 2. Hook para deletar
+    const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
 
-    const { userInfo } = useSelector((state: RootState) => state.auth);
-
-    // Função para buscar usuários
-    const fetchUsers = async () => {
-        try {
-            const config = {
-                headers: { Authorization: `Bearer ${userInfo?.token}` },
-            };
-            const { data } = await axios.get('/api/users', config);
-            setUsers(data);
-            setLoading(false);
-        } catch (err: any) {
-            setError(err.response?.data?.message || err.message);
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        // Se não for admin, chuta para a página de login
-        if (userInfo && userInfo.isAdmin) {
-            fetchUsers();
-        } else {
-            navigate('/login');
-        }
-    }, [navigate, userInfo]);
-
-    // Função para deletar usuário
     const deleteHandler = async (id: string) => {
         if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
             try {
-                const config = {
-                    headers: { Authorization: `Bearer ${userInfo?.token}` },
-                };
-                await axios.delete(`/api/users/${id}`, config);
-                // Recarrega a lista após deletar
-                fetchUsers();
-                alert('Usuário removido');
+                await deleteUser(id);
+                refetch();
+                toast.success('Usuário removido com sucesso');
             } catch (err: any) {
-                alert(err.response?.data?.message || err.message);
+                toast.error(err?.data?.message || err.error);
             }
         }
     };
 
     return (
-        <div className="container mx-auto mt-10 px-4">
-            <h1 className="text-3xl font-bold mb-6 text-slate-800">Usuários (Admin)</h1>
+        <div className="container mx-auto mt-10 px-4 pb-20">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                    Gerenciamento de Usuários
+                </h1>
+            </div>
 
-            {loading ? (
-                <p>Carregando...</p>
+            {loadingDelete && <Loader />}
+
+            {isLoading ? (
+                <div className="flex justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
+                </div>
             ) : error ? (
-                <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+                <Message variant='danger'>
+                    {(error as any)?.data?.message || 'Erro ao carregar usuários'}
+                </Message>
             ) : (
-                <div className="overflow-x-auto shadow-md rounded-lg">
-                    <table className="min-w-full bg-white">
-                        <thead className="bg-slate-800 text-white">
-                            <tr>
-                                <th className="py-3 px-4 text-left">ID</th>
-                                <th className="py-3 px-4 text-left">NOME</th>
-                                <th className="py-3 px-4 text-left">EMAIL</th>
-                                <th className="py-3 px-4 text-center">ADMIN</th>
-                                <th className="py-3 px-4 text-center">AÇÕES</th>
+                <div className="overflow-x-auto bg-white shadow-2xl rounded-xl border border-slate-100">
+                    <table className="min-w-full">
+                        <thead>
+                            <tr className="bg-slate-800 text-white uppercase text-xs tracking-widest">
+                                <th className="py-4 px-6 text-left font-semibold">ID</th>
+                                <th className="py-4 px-6 text-left font-semibold">NOME</th>
+                                <th className="py-4 px-6 text-left font-semibold">EMAIL</th>
+                                <th className="py-4 px-6 text-center font-semibold">ADMIN</th>
+                                <th className="py-4 px-6 text-center font-semibold">AÇÕES</th>
                             </tr>
                         </thead>
-                        <tbody className="text-gray-700">
-                            {users.map((user) => (
-                                <tr key={user._id} className="border-b hover:bg-gray-50">
-                                    <td className="py-3 px-4">{user._id}</td>
-                                    <td className="py-3 px-4">{user.name}</td>
-                                    <td className="py-3 px-4">
+                        <tbody className="text-slate-600 divide-y divide-slate-100">
+                            {users.map((user: any) => (
+                                <tr key={user._id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="py-4 px-6 font-mono text-xs">{user._id}</td>
+                                    <td className="py-4 px-6 font-medium text-slate-900">{user.name}</td>
+                                    <td className="py-4 px-6">
                                         <a href={`mailto:${user.email}`} className="text-blue-600 hover:underline">
                                             {user.email}
                                         </a>
                                     </td>
-                                    <td className="py-3 px-4 text-center">
+                                    <td className="py-4 px-6 text-center">
                                         {user.isAdmin ? (
-                                            <span className="text-green-600 font-bold">✅</span>
+                                            <FaCheck className="text-green-500 mx-auto" />
                                         ) : (
-                                            <span className="text-red-600 font-bold">❌</span>
+                                            <FaTimes className="text-red-400 mx-auto" />
                                         )}
                                     </td>
-                                    <td className="py-3 px-4 text-center">
-                                        <div className="flex justify-center gap-2">
+                                    <td className="py-4 px-6">
+                                        <div className="flex justify-center gap-3">
                                             <Link
                                                 to={`/admin/user/${user._id}/edit`}
-                                                className="bg-slate-200 text-slate-700 px-3 py-1 rounded hover:bg-slate-300 transition"
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                                title="Editar"
                                             >
-                                                Editar
+                                                <FaEdit size={18} />
                                             </Link>
                                             <button
                                                 onClick={() => deleteHandler(user._id)}
-                                                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                                                disabled={loadingDelete}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-30"
+                                                title="Excluir"
                                             >
-                                                Excluir
+                                                <FaTrash size={18} />
                                             </button>
                                         </div>
                                     </td>
