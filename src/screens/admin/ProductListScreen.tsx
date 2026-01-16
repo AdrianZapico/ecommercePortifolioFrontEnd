@@ -1,65 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa'; // Ícones para um visual mais pro
-import type { RootState } from '../../store';
+import { Link, useParams } from 'react-router-dom';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import Message from '../../components/Message';
+import Loader from '../../components/Loader';
+// 👇 A MÁGICA: Importamos os hooks do Redux em vez do axios manual
+import {
+    useGetProductsQuery,
+    useCreateProductMutation,
+    useDeleteProductMutation
+} from '../../slices/productsApiSlice';
 
 const ProductListScreen = () => {
-    // 1. Pegamos o número da página da URL (ex: /admin/productlist/page/2)
-    const { pageNumber = 1 } = useParams();
+    // 1. Pega a página da URL
+    const { pageNumber } = useParams();
 
-    const [products, setProducts] = useState<any[]>([]);
-    const [pages, setPages] = useState(1);
-    const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    // 2. BUSCA DE DADOS (Substitui o useEffect e axios.get)
+    // O Redux cuida de carregar, erro e atualizar sozinho
+    const { data, isLoading, error, refetch } = useGetProductsQuery({
+        pageNumber: pageNumber || 1
+    });
 
-    const [loadingCreate, setLoadingCreate] = useState(false);
-    const [loadingDelete, setLoadingDelete] = useState(false);
-
-    const navigate = useNavigate();
-    const { userInfo } = useSelector((state: RootState) => state.auth);
-
-    const fetchProducts = async () => {
-        try {
-            setLoading(true);
-            // 2. Passamos o pageNumber na query string
-            const { data } = await axios.get(`/api/products?pageNumber=${pageNumber}`);
-
-            // 3. AQUI ESTÁ A CORREÇÃO: data agora tem products, page e pages
-            setProducts(data.products);
-            setPages(data.pages);
-            setPage(data.page);
-
-            setLoading(false);
-        } catch (err: any) {
-            setError(err.response?.data?.message || err.message);
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!userInfo || !userInfo.isAdmin) {
-            navigate('/login');
-        } else {
-            fetchProducts();
-        }
-    }, [navigate, userInfo, pageNumber]); // Recarrega se a página mudar
+    // 3. HOOKS DE AÇÃO (Substitui axios.post e axios.delete)
+    const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation();
+    const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation();
 
     const deleteHandler = async (id: string) => {
         if (window.confirm('Tem certeza que deseja excluir este produto?')) {
             try {
-                setLoadingDelete(true);
-                const config = {
-                    headers: { Authorization: `Bearer ${userInfo?.token}` },
-                };
-                await axios.delete(`/api/products/${id}`, config);
-                setLoadingDelete(false);
-                fetchProducts();
+                await deleteProduct(id);
+                // Não precisa chamar fetchProducts(), o Redux atualiza a lista sozinho!
+                refetch();
+                toast.success('Produto excluído com sucesso');
             } catch (err: any) {
-                alert(err.response?.data?.message || err.message);
-                setLoadingDelete(false);
+                toast.error(err?.data?.message || err.error);
             }
         }
     };
@@ -67,16 +40,14 @@ const ProductListScreen = () => {
     const createProductHandler = async () => {
         if (window.confirm('Deseja criar um novo produto rascunho?')) {
             try {
-                setLoadingCreate(true);
-                const config = {
-                    headers: { Authorization: `Bearer ${userInfo?.token}` },
-                };
-                const { data: createdProduct } = await axios.post('/api/products', {}, config);
-                setLoadingCreate(false);
-                navigate(`/admin/product/${createdProduct._id}/edit`);
+                await createProduct({});
+                refetch();
+                toast.success('Produto criado');
+                // Nota: O backend deve criar o produto e o Redux atualizará a lista. 
+                // Se quiser redirecionar para edição imediata, precisariamos pegar o ID retornado,
+                // mas por enquanto vamos apenas atualizar a lista para evitar erros.
             } catch (err: any) {
-                alert(err.response?.data?.message || err.message);
-                setLoadingCreate(false);
+                toast.error(err?.data?.message || err.error);
             }
         }
     };
@@ -96,12 +67,16 @@ const ProductListScreen = () => {
                 </button>
             </div>
 
-            {loading ? (
+            {/* LOADER DE AÇÕES RÁPIDAS */}
+            {(loadingCreate || loadingDelete) && <Loader />}
+
+            {/* TABELA PRINCIPAL */}
+            {isLoading ? (
                 <div className="flex justify-center py-20">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
                 </div>
             ) : error ? (
-                <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm">{error}</div>
+                <Message variant='danger'>{(error as any)?.data?.message || 'Erro ao carregar produtos'}</Message>
             ) : (
                 <>
                     <div className="overflow-x-auto bg-white shadow-2xl rounded-xl border border-slate-100">
@@ -117,7 +92,8 @@ const ProductListScreen = () => {
                                 </tr>
                             </thead>
                             <tbody className="text-slate-600 divide-y divide-slate-100">
-                                {products.map((product) => (
+                                {/* O Redux devolve 'data' contendo 'products' */}
+                                {data.products.map((product: any) => (
                                     <tr key={product._id} className="hover:bg-slate-50 transition-colors">
                                         <td className="py-4 px-6 font-mono text-xs">{product._id}</td>
                                         <td className="py-4 px-6 font-medium text-slate-900">{product.name}</td>
@@ -139,7 +115,6 @@ const ProductListScreen = () => {
                                                 </Link>
                                                 <button
                                                     onClick={() => deleteHandler(product._id)}
-                                                    disabled={loadingDelete}
                                                     className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-30"
                                                     title="Excluir"
                                                 >
@@ -153,14 +128,14 @@ const ProductListScreen = () => {
                         </table>
                     </div>
 
-                    {/* PAGINAÇÃO SIMPLES */}
-                    {pages > 1 && (
+                    {/* PAGINAÇÃO (Usando dados vindos do Redux: data.pages e data.page) */}
+                    {data.pages > 1 && (
                         <div className="flex justify-center mt-8 gap-2">
-                            {[...Array(pages).keys()].map((x) => (
+                            {[...Array(data.pages).keys()].map((x) => (
                                 <Link
                                     key={x + 1}
-                                    to={`/admin/productlist/page/${x + 1}`}
-                                    className={`px-4 py-2 rounded-md font-bold transition-all ${x + 1 === page
+                                    to={`/admin/productlist/${x + 1}`} // Ajustei a URL para o padrão comum
+                                    className={`px-4 py-2 rounded-md font-bold transition-all ${x + 1 === data.page
                                             ? 'bg-slate-900 text-white shadow-md scale-110'
                                             : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                                         }`}
