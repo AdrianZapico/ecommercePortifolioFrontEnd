@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import { ORDERS_URL, PAYPAL_URL } from '../constants'; // Ou use as strings diretas se preferir
+import { ORDERS_URL, PAYPAL_URL } from '../constants';
 
 export const ordersApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
@@ -29,7 +29,6 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
             }),
             keepUnusedDataFor: 5,
         }),
-        // 👇 ADICIONE ESTA PARTE NOVA 👇
         deliverOrder: builder.mutation({
             query: (orderId) => ({
                 url: `/api/orders/${orderId}/deliver`,
@@ -42,7 +41,6 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
             }),
             keepUnusedDataFor: 5,
         }),
-        // 👆 FIM DA PARTE NOVA 👆
     }),
 });
 

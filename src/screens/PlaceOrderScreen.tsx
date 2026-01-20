@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { useCreateOrderMutation } from '../slices/ordersApiSlice';// <--- Importamos a conexão certa
-import { clearCartItems } from '../slices/cartSlice'; // <--- Ação para limpar carrinho
+import { useCreateOrderMutation } from '../slices/ordersApiSlice';
+import { clearCartItems } from '../slices/cartSlice';
 import CheckoutSteps from '../components/CheckoutSteps';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
@@ -12,7 +12,6 @@ const PlaceOrderScreen = () => {
     const dispatch = useDispatch();
     const cart = useSelector((state: any) => state.cart);
 
-    // Hook do Redux para criar pedido
     const [createOrder, { isLoading, error }] = useCreateOrderMutation();
 
     useEffect(() => {
@@ -25,7 +24,6 @@ const PlaceOrderScreen = () => {
 
     const placeOrderHandler = async () => {
         try {
-            // Tenta criar o pedido na API certa
             const res = await createOrder({
                 orderItems: cart.cartItems,
                 shippingAddress: cart.shippingAddress,
@@ -36,7 +34,6 @@ const PlaceOrderScreen = () => {
                 totalPrice: cart.totalPrice,
             }).unwrap();
 
-            // Se der certo, limpa o carrinho e vai para a tela do pedido
             dispatch(clearCartItems());
             navigate(`/order/${res._id}`);
         } catch (err) {
@@ -49,10 +46,8 @@ const PlaceOrderScreen = () => {
             <CheckoutSteps step1 step2 step3 step4 />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
-                {/* Lado Esquerdo: Resumo dos Dados */}
                 <div className="md:col-span-2 space-y-6">
 
-                    {/* Endereço */}
                     <div className="bg-white p-6 rounded shadow-sm border">
                         <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Entrega</h2>
                         <p className="text-slate-600">
@@ -62,14 +57,12 @@ const PlaceOrderScreen = () => {
                         </p>
                     </div>
 
-                    {/* Pagamento */}
                     <div className="bg-white p-6 rounded shadow-sm border">
                         <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Pagamento</h2>
                         <strong className="text-slate-800">Método: </strong>
                         {cart.paymentMethod}
                     </div>
 
-                    {/* Itens */}
                     <div className="bg-white p-6 rounded shadow-sm border">
                         <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">Itens do Pedido</h2>
                         {cart.cartItems.length === 0 ? (
@@ -94,7 +87,6 @@ const PlaceOrderScreen = () => {
                     </div>
                 </div>
 
-                {/* Lado Direito: Resumo de Valores */}
                 <div className="md:col-span-1">
                     <div className="bg-white p-6 rounded shadow-md border">
                         <h2 className="text-2xl font-bold text-slate-800 mb-4 border-b pb-2 text-center">Resumo do Pedido</h2>
@@ -129,8 +121,8 @@ const PlaceOrderScreen = () => {
                         <button
                             type='button'
                             className={`w-full mt-6 py-3 rounded font-bold text-white transition-colors ${cart.cartItems.length === 0 || isLoading
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-slate-800 hover:bg-slate-700'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-slate-800 hover:bg-slate-700'
                                 }`}
                             disabled={cart.cartItems.length === 0 || isLoading}
                             onClick={placeOrderHandler}

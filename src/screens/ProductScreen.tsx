@@ -14,7 +14,6 @@ const ProductScreen = () => {
 
     const [qty, setQty] = useState(1);
 
-    // Busca os detalhes do produto usando o ID da URL
     const { data: product, isLoading, error } = useGetProductDetailsQuery(productId);
 
     const addToCartHandler = () => {
@@ -36,7 +35,6 @@ const ProductScreen = () => {
                 </Message>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
-                    {/* Coluna da Imagem */}
                     <div className="flex justify-center">
                         <img
                             src={product.image}
@@ -45,7 +43,6 @@ const ProductScreen = () => {
                         />
                     </div>
 
-                    {/* Coluna das Informações */}
                     <div className="space-y-4">
                         <h3 className="text-3xl font-bold text-slate-800">{product.name}</h3>
 
@@ -61,7 +58,6 @@ const ProductScreen = () => {
                             {product.description}
                         </p>
 
-                        {/* Caixa de Ação (Comprar) */}
                         <div className="bg-white p-6 border rounded-lg shadow-sm mt-4">
                             <div className="flex justify-between mb-4 border-b pb-2">
                                 <span className="font-bold">Preço:</span>
@@ -96,8 +92,8 @@ const ProductScreen = () => {
                                 onClick={addToCartHandler}
                                 disabled={product.countInStock === 0}
                                 className={`w-full py-3 px-4 rounded font-bold text-white transition-colors ${product.countInStock === 0
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-slate-800 hover:bg-slate-700'
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-slate-800 hover:bg-slate-700'
                                     }`}
                             >
                                 {product.countInStock === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}

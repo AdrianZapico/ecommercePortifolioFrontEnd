@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// Tenta pegar do localStorage ou inicia vazio
 const initialState = localStorage.getItem('cart')
     ? JSON.parse(localStorage.getItem('cart') as string)
     : { cartItems: [], shippingAddress: {}, paymentMethod: 'PayPal' };
@@ -21,7 +20,6 @@ const cartSlice = createSlice({
                 state.cartItems = [...state.cartItems, item];
             }
 
-            // Recalcula totais (Lógica simplificada)
             state.itemsPrice = state.cartItems.reduce((acc: any, item: any) => acc + item.price * item.qty, 0);
             state.shippingPrice = state.itemsPrice > 100 ? 0 : 10;
             state.taxPrice = Number((0.15 * state.itemsPrice).toFixed(2));
@@ -45,7 +43,6 @@ const cartSlice = createSlice({
             state.paymentMethod = action.payload;
             localStorage.setItem('cart', JSON.stringify(state));
         },
-        // AQUI ESTÁ A FUNÇÃO QUE FALTAVA:
         clearCartItems: (state) => {
             state.cartItems = [];
             localStorage.setItem('cart', JSON.stringify(state));
@@ -58,7 +55,7 @@ export const {
     removeFromCart,
     saveShippingAddress,
     savePaymentMethod,
-    clearCartItems // <--- Agora ela existe!
+    clearCartItems
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

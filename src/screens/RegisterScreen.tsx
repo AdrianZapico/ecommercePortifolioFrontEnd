@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
-import { useRegisterMutation } from '../slices/usersApiSlice'; // <--- O hook que conecta no Render
-import { setCredentials } from '../slices/authSlice';       // <--- Salva o login após o cadastro
+import { useRegisterMutation } from '../slices/usersApiSlice';
+import { setCredentials } from '../slices/authSlice';
 
 const RegisterScreen = () => {
     const [name, setName] = useState('');
@@ -16,7 +16,6 @@ const RegisterScreen = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // Usa a ferramenta de registro do Redux
     const [register, { isLoading, error }] = useRegisterMutation();
 
     const { userInfo } = useSelector((state: any) => state.auth);
@@ -25,7 +24,6 @@ const RegisterScreen = () => {
     const sp = new URLSearchParams(search);
     const redirect = sp.get('redirect') || '/';
 
-    // Se o usuário já estiver logado, redireciona
     useEffect(() => {
         if (userInfo) {
             navigate(redirect);
@@ -35,7 +33,6 @@ const RegisterScreen = () => {
     const submitHandler = async (e: any) => {
         e.preventDefault();
 
-        // 1. Validação simples: Senhas batem?
         if (password !== confirmPassword) {
             setMessage('As senhas não conferem');
             return;
@@ -44,15 +41,12 @@ const RegisterScreen = () => {
         }
 
         try {
-            // 2. Tenta registrar (Isso vai para https://ecommerceportifolio.onrender.com/api/users)
             const res = await register({ name, email, password }).unwrap();
 
-            // 3. Se deu certo, salva o login e redireciona
             dispatch(setCredentials({ ...res }));
             navigate(redirect);
         } catch (err) {
             console.log(err);
-            // O erro será exibido pelo componente <Message> abaixo
         }
     };
 
@@ -61,7 +55,6 @@ const RegisterScreen = () => {
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
                 <h1 className="text-3xl font-bold text-center text-slate-800 mb-6">Criar Conta</h1>
 
-                {/* Mensagens de Erro */}
                 {message && <Message variant='danger'>{message}</Message>}
                 {error && (
                     <Message variant='danger'>

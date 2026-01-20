@@ -4,26 +4,20 @@ import Product from '../components/Product';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Paginate from '../components/Paginate';
-import ProductCarousel from '../components/ProductCarousel'; // <--- 1. Import reativado!
+import ProductCarousel from '../components/ProductCarousel';
 
 const HomeScreen = () => {
     const { pageNumber, keyword } = useParams();
 
-    // Busca os produtos (conectado ao Render)
     const { data, isLoading, error } = useGetProductsQuery({
         keyword,
         pageNumber: pageNumber || 1
     });
 
-    // --- PROTEÇÃO CONTRA TELA BRANCA ---
-    // Garante que 'products' sempre seja um array, mesmo se a API falhar momentaneamente
     const products = data?.products || [];
 
     return (
         <>
-            {/* 2. LÓGICA DO CARROSSEL RESTAURADA */}
-            {/* Se não estamos pesquisando (sem keyword), mostra o Destaque.
-          Se estamos pesquisando, mostra o botão de Voltar. */}
             {!keyword ? (
                 <ProductCarousel />
             ) : (
@@ -47,7 +41,6 @@ const HomeScreen = () => {
                         Latest Products
                     </h1>
 
-                    {/* Aviso amigável caso a lista venha vazia */}
                     {products.length === 0 && <Message>Nenhum produto encontrado.</Message>}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

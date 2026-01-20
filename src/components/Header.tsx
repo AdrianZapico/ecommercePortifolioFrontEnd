@@ -19,7 +19,6 @@ const Header = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showAdminMenu, setShowAdminMenu] = useState(false);
 
-    // Refs para detectar cliques fora
     const userMenuRef = useRef<HTMLDivElement>(null);
     const adminMenuRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +28,7 @@ const Header = () => {
         setShowUserMenu(false);
         navigate('/login');
     };
-    // Fecha os menus se clicar em qualquer lugar fora deles
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -48,20 +47,16 @@ const Header = () => {
         <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b border-slate-800">
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
 
-                {/* LOGO */}
                 <Link to="/" className="text-2xl font-bold font-mono italic hover:text-yellow-400 transition-colors">
                     TechShop
                 </Link>
 
-                {/* BARRA DE BUSCA */}
                 <div className="hidden md:block w-1/3">
                     <SearchBox />
                 </div>
 
-                {/* NAVEGAÇÃO */}
                 <nav className="flex items-center space-x-6">
 
-                    {/* Carrinho */}
                     <Link to="/cart" className="flex items-center gap-2 hover:text-yellow-400 transition relative group">
                         <FaShoppingCart className="text-xl group-hover:scale-110 transition-transform" />
                         <span className="hidden sm:inline">Carrinho</span>
@@ -72,7 +67,6 @@ const Header = () => {
                         )}
                     </Link>
 
-                    {/* Área do Usuário */}
                     {userInfo ? (
                         <div className="relative" ref={userMenuRef}>
                             <button
@@ -111,7 +105,6 @@ const Header = () => {
                         </Link>
                     )}
 
-                    {/* Área do Admin */}
                     {userInfo && userInfo.isAdmin && (
                         <div className="relative" ref={adminMenuRef}>
                             <button

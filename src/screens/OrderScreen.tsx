@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { toast } from 'react-toastify'; // Opcional: para notificações bonitas
+import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import {
@@ -12,7 +12,6 @@ import {
 const OrderScreen = () => {
     const { id: orderId } = useParams();
 
-    // 1. Hook para buscar dados (substitui useEffect e axios.get)
     const {
         data: order,
         refetch,
@@ -20,7 +19,6 @@ const OrderScreen = () => {
         error
     } = useGetOrderDetailsQuery(orderId);
 
-    // 2. Hook para entregar pedido (substitui axios.put)
     const [deliverOrder, { isLoading: loadingDeliver }] = useDeliverOrderMutation();
 
     const { userInfo } = useSelector((state: any) => state.auth);
@@ -28,14 +26,13 @@ const OrderScreen = () => {
     const deliverHandler = async () => {
         try {
             await deliverOrder(orderId);
-            refetch(); // Força a atualização dos dados na tela sem recarregar a página
+            refetch();
             toast.success('Pedido marcado como entregue');
         } catch (err: any) {
             toast.error(err?.data?.message || err.message);
         }
     };
 
-    // Renderização condicional baseada no status do Hook
     return isLoading ? (
         <Loader />
     ) : error ? (
@@ -47,10 +44,8 @@ const OrderScreen = () => {
             <h1 className="text-2xl font-bold mb-6 text-slate-800">PEDIDO ATUALIZADOo: {order._id}</h1>
 
             <div className="flex flex-col md:flex-row gap-8">
-                {/* COLUNA ESQUERDA */}
                 <div className="md:w-2/3">
 
-                    {/* ENVIO */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Envio</h2>
                         <p className="mb-2">
@@ -84,7 +79,6 @@ const OrderScreen = () => {
                         )}
                     </div>
 
-                    {/* PAGAMENTO */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Pagamento</h2>
                         <p className="mb-4">
@@ -100,7 +94,6 @@ const OrderScreen = () => {
                         )}
                     </div>
 
-                    {/* ITENS */}
                     <div className="bg-white p-6 rounded shadow-sm mb-4 border border-gray-200">
                         <h2 className="text-2xl font-semibold mb-4 text-slate-700">Itens do Pedido</h2>
                         {order.orderItems.length === 0 ? (
@@ -129,7 +122,6 @@ const OrderScreen = () => {
                     </div>
                 </div>
 
-                {/* COLUNA DIREITA: RESUMO */}
                 <div className="md:w-1/3">
                     <div className="bg-white p-6 rounded shadow-lg border border-gray-200 sticky top-4">
                         <h2 className="text-2xl font-bold mb-6 text-slate-800 text-center">Resumo</h2>
@@ -154,14 +146,12 @@ const OrderScreen = () => {
                             </div>
                         </div>
 
-                        {/* Espaço reservado para botão PayPal */}
                         {!order.isPaid && (
                             <div className='mt-4 p-3 bg-yellow-50 text-yellow-800 text-center rounded border border-yellow-200'>
                                 Botão do PayPal virá aqui
                             </div>
                         )}
 
-                        {/* Botão de Marcar como Entregue (Apenas Admin) */}
                         {loadingDeliver && <Loader />}
 
                         {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (

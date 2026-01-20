@@ -5,7 +5,6 @@ import Loader from '../../components/Loader';
 import { useGetOrdersQuery } from '../../slices/ordersApiSlice';
 
 const OrderListScreen = () => {
-    // Busca todos os pedidos do sistema (Admin)
     const { data: orders, isLoading, error } = useGetOrdersQuery({});
 
     return (
@@ -52,7 +51,6 @@ const OrderListScreen = () => {
                                         ${order.totalPrice}
                                     </td>
 
-                                    {/* Status de Pagamento */}
                                     <td className="py-4 px-6 text-center">
                                         {order.isPaid ? (
                                             <div className="flex flex-col items-center">
@@ -64,7 +62,6 @@ const OrderListScreen = () => {
                                         )}
                                     </td>
 
-                                    {/* Status de Entrega */}
                                     <td className="py-4 px-6 text-center">
                                         {order.isDelivered ? (
                                             <div className="flex flex-col items-center">
@@ -76,7 +73,6 @@ const OrderListScreen = () => {
                                         )}
                                     </td>
 
-                                    {/* Botão de Detalhes */}
                                     <td className="py-4 px-6 text-center">
                                         <Link
                                             to={`/order/${order._id}`}

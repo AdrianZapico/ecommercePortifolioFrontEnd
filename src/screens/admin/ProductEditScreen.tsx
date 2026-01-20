@@ -2,14 +2,13 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { toast } from 'react-toastify'; // Recomendo usar para feedbacks melhores
+import { toast } from 'react-toastify';
 import type { RootState } from '../../store';
 
 const ProductEditScreen = () => {
   const { id: productId } = useParams();
   const navigate = useNavigate();
 
-  // Estados dos campos
   const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
   const [image, setImage] = useState('');
@@ -18,7 +17,6 @@ const ProductEditScreen = () => {
   const [countInStock, setCountInStock] = useState(0);
   const [description, setDescription] = useState('');
 
-  // Estados de controle de UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [loadingUpdate, setLoadingUpdate] = useState(false);
@@ -51,7 +49,6 @@ const ProductEditScreen = () => {
     }
   }, [productId, navigate, userInfo]);
 
-  // Handler de Upload Refatorado
   const uploadFileHandler = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -64,7 +61,7 @@ const ProductEditScreen = () => {
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${userInfo?.token}`, // Garantindo autorização
+          Authorization: `Bearer ${userInfo?.token}`,
         },
       };
 
@@ -72,7 +69,6 @@ const ProductEditScreen = () => {
 
       setImage(data);
       setUploading(false);
-      // alert('Imagem carregada!'); // Ou use toast.success
     } catch (err: any) {
       console.error(err);
       setUploading(false);
@@ -124,8 +120,7 @@ const ProductEditScreen = () => {
           <form onSubmit={submitHandler} className="space-y-5">
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* NOME */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-slate-700 font-bold mb-2">Nome do Produto</label>
                 <input
                   type="text"
@@ -135,7 +130,6 @@ const ProductEditScreen = () => {
                 />
               </div>
 
-              {/* PREÇO */}
               <div>
                 <label className="block text-slate-700 font-bold mb-2">Preço (R$)</label>
                 <input
@@ -146,7 +140,6 @@ const ProductEditScreen = () => {
                 />
               </div>
 
-              {/* ESTOQUE */}
               <div>
                 <label className="block text-slate-700 font-bold mb-2">Qtd em Estoque</label>
                 <input
@@ -158,7 +151,6 @@ const ProductEditScreen = () => {
               </div>
             </div>
 
-            {/* IMAGEM */}
             <div className="bg-slate-50 p-4 rounded-lg border border-dashed border-slate-300">
               <label className="block text-slate-700 font-bold mb-2">Imagem do Produto</label>
               <input
@@ -182,7 +174,6 @@ const ProductEditScreen = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* MARCA */}
               <div>
                 <label className="block text-slate-700 font-bold mb-2">Marca</label>
                 <input
@@ -193,7 +184,6 @@ const ProductEditScreen = () => {
                 />
               </div>
 
-              {/* CATEGORIA */}
               <div>
                 <label className="block text-slate-700 font-bold mb-2">Categoria</label>
                 <input
@@ -205,7 +195,6 @@ const ProductEditScreen = () => {
               </div>
             </div>
 
-            {/* DESCRIÇÃO */}
             <div>
               <label className="block text-slate-700 font-bold mb-2">Descrição</label>
               <textarea

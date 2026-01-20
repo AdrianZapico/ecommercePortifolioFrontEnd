@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify'; // Importando Toast para alertas bonitos
+import { toast } from 'react-toastify';
 import axios from 'axios';
 import { setCredentials } from '../slices/authSlice';
 import type { RootState } from '../store';
@@ -13,10 +13,8 @@ const ProfileScreen = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
 
-    // --- NOVOS STATES PARA IMAGEM ---
     const [image, setImage] = useState('');
     const [uploading, setUploading] = useState(false);
-    // --------------------------------
 
     const [orders, setOrders] = useState<any[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
@@ -33,7 +31,6 @@ const ProfileScreen = () => {
         } else {
             setName(userInfo.name);
             setEmail(userInfo.email);
-            // Carrega a imagem atual do usuário (ou vazio se não tiver)
             setImage(userInfo.image || '');
 
             const fetchMyOrders = async () => {
@@ -54,7 +51,6 @@ const ProfileScreen = () => {
         }
     }, [navigate, userInfo]);
 
-    // --- FUNÇÃO DE UPLOAD DE IMAGEM ---
     const uploadFileHandler = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -67,13 +63,13 @@ const ProfileScreen = () => {
             const config = {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${userInfo?.token}`, // Necessário para rota de upload
+                    Authorization: `Bearer ${userInfo?.token}`,
                 },
             };
 
             const { data } = await axios.post('/api/upload', formData, config);
 
-            setImage(data); // Define a URL da imagem retornada pelo backend
+            setImage(data);
             setUploading(false);
             toast.success('Imagem carregada com sucesso!');
         } catch (err: any) {
@@ -82,7 +78,6 @@ const ProfileScreen = () => {
             setUploading(false);
         }
     };
-    // ----------------------------------
 
     const submitHandler = async (e: FormEvent) => {
         e.preventDefault();
@@ -96,7 +91,6 @@ const ProfileScreen = () => {
                 headers: { Authorization: `Bearer ${userInfo?.token}` },
             };
 
-            // Agora enviamos também a 'image'
             const res = await axios.put(
                 '/api/users/profile',
                 { name, email, password, image },
@@ -116,13 +110,11 @@ const ProfileScreen = () => {
         <div className="container mx-auto mt-10 px-4">
             <div className="flex flex-col md:flex-row gap-10">
 
-                {/* --- COLUNA 1: ATUALIZAR PERFIL --- */}
                 <div className="md:w-1/4">
                     <h2 className="text-2xl font-bold mb-6 text-slate-800">Perfil de Usuário</h2>
 
                     {message && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{message}</div>}
 
-                    {/* --- PREVIEW DA FOTO (NOVO) --- */}
                     <div className="flex justify-center mb-6">
                         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-200 relative bg-gray-100">
                             <img
@@ -132,14 +124,11 @@ const ProfileScreen = () => {
                             />
                         </div>
                     </div>
-                    {/* ----------------------------- */}
 
                     <form onSubmit={submitHandler}>
 
-                        {/* --- INPUT DE UPLOAD (NOVO) --- */}
                         <div className="mb-4">
                             <label className="block text-gray-700 font-bold mb-2">Foto de Perfil</label>
-                            {/* Input de texto oculto ou visível se quiser ver a URL */}
                             <input
                                 type="text"
                                 placeholder="URL da imagem"
@@ -155,7 +144,6 @@ const ProfileScreen = () => {
                             />
                             {uploading && <p className="text-sm text-blue-500 mt-1">Enviando imagem...</p>}
                         </div>
-                        {/* ----------------------------- */}
 
                         <div className="mb-4">
                             <label className="block text-gray-700 font-bold mb-2">Nome</label>
@@ -207,7 +195,6 @@ const ProfileScreen = () => {
                     </form>
                 </div>
 
-                {/* --- COLUNA 2: MEUS PEDIDOS --- */}
                 <div className="md:w-3/4">
                     <h2 className="text-2xl font-bold mb-4 text-slate-800">Meus Pedidos</h2>
 

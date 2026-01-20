@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
 const CheckoutSteps = ({ step1, step2, step3, step4 }: any) => {
-    // Estilo base para os links
     const linkStyle = "text-slate-800 font-bold hover:text-blue-600 transition-colors";
     const disabledStyle = "text-gray-400 cursor-not-allowed";
 

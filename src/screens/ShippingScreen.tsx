@@ -5,7 +5,6 @@ import { saveShippingAddress } from '../slices/cartSlice';
 import type { RootState } from '../store';
 
 const ShippingScreen = () => {
-    // Pega o endereço salvo anteriormente (se houver) para preencher o form
     const cart = useSelector((state: RootState) => state.cart);
     const { shippingAddress } = cart;
 
@@ -19,9 +18,7 @@ const ShippingScreen = () => {
 
     const submitHandler = (e: FormEvent) => {
         e.preventDefault();
-        // Salva no Redux
         dispatch(saveShippingAddress({ address, city, postalCode, country }));
-        // Vai para a próxima etapa (Pagamento)
         navigate('/payment');
     };
 

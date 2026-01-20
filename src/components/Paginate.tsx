@@ -22,8 +22,8 @@ const Paginate = ({ pages, page, isAdmin = false, keyword = '' }: PaginateProps)
                                 : `/admin/productlist/${x + 1}`
                         }
                         className={`px-4 py-2 mx-1 border rounded ${x + 1 === page
-                                ? 'bg-slate-800 text-white border-slate-800' // Estilo do Ativo
-                                : 'bg-white text-slate-700 hover:bg-gray-100' // Estilo Padrão
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-700 hover:bg-gray-100'
                             }`}
                     >
                         {x + 1}

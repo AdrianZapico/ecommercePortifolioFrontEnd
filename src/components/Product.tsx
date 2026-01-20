@@ -42,7 +42,6 @@ const Product = ({ product }: ProductProps) => {
                     <span className="text-xl font-bold text-slate-900">
                         ${product.price.toFixed(2)}
                     </span>
-                    {/* Optional: Add to cart button or similar could go here */}
                 </div>
             </div>
         </div>

@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
-import { useLoginMutation } from '../slices/usersApiSlice'; // <--- Importamos a ferramenta nova
-import { setCredentials } from '../slices/authSlice';       // <--- Importamos a ação de salvar os dados
+import { useLoginMutation } from '../slices/usersApiSlice';
+import { setCredentials } from '../slices/authSlice';
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
@@ -13,7 +13,6 @@ const LoginScreen = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    // Ferramenta do Redux (Conectada ao Render)
     const [login, { isLoading, error }] = useLoginMutation();
 
     const { userInfo } = useSelector((state: any) => state.auth);
@@ -22,7 +21,6 @@ const LoginScreen = () => {
     const sp = new URLSearchParams(search);
     const redirect = sp.get('redirect') || '/';
 
-    // Se já estiver logado, redireciona
     useEffect(() => {
         if (userInfo) {
             navigate(redirect);
@@ -32,14 +30,11 @@ const LoginScreen = () => {
     const submitHandler = async (e: any) => {
         e.preventDefault();
         try {
-            // Tenta fazer o login usando a API certa
             const res = await login({ email, password }).unwrap();
 
-            // Se der certo, salva os dados no navegador e redireciona
             dispatch(setCredentials({ ...res }));
             navigate(redirect);
         } catch (err) {
-            // O erro agora é tratado automaticamente pelo componente Message abaixo
             console.log(err);
         }
     };
@@ -49,14 +44,12 @@ const LoginScreen = () => {
             <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
                 <h1 className="text-3xl font-bold text-center text-slate-800 mb-6">Login</h1>
 
-                {/* Mostra erro se houver */}
                 {error && (
                     <Message variant='danger'>
                         {(error as any)?.data?.message || (error as any)?.error || 'Erro no Login'}
                     </Message>
                 )}
 
-                {/* Mostra loader enquanto carrega */}
                 {isLoading && <Loader />}
 
                 <form onSubmit={submitHandler}>

@@ -6,7 +6,6 @@ import {
   Route,
   RouterProvider
 } from 'react-router-dom'
-// 1. Importe o Provider e o store
 import { Provider } from 'react-redux';
 import store from './store.ts';
 
@@ -31,17 +30,10 @@ import RegisterScreen from './screens/RegisterScreen.tsx'
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
-
-      {/* --- ROTAS DA HOME (Busca e Paginação) --- */}
-      {/* 1. Busca com Paginação */}
       <Route path="/search/:keyword/page/:pageNumber" element={<HomeScreen />} />
-      {/* 2. Busca Simples */}
       <Route path="/search/:keyword" element={<HomeScreen />} />
-      {/* 3. Paginação Simples (sem busca) */}
       <Route path="/page/:pageNumber" element={<HomeScreen />} />
-      {/* 4. Home Padrão */}
       <Route index={true} path="/" element={<HomeScreen />} />
-      {/* ----------------------------------------- */}
 
       <Route path="/product/:id" element={<ProductScreen />} />
       <Route path="/cart" element={<CartScreen />} />
@@ -54,7 +46,6 @@ const router = createBrowserRouter(
       <Route path="/profile" element={<ProfileScreen />} />
       <Route path="/register" element={<RegisterScreen />} />
 
-      {/* Rotas de Admin */}
       <Route path="/admin/userlist" element={<UserListScreen />} />
       <Route path="/admin/productlist" element={<ProductListScreen />} />
       <Route path="/admin/product/:id/edit" element={<ProductEditScreen />} />

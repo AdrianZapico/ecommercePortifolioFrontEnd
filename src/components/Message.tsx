@@ -6,7 +6,6 @@ interface MessageProps {
 }
 
 const Message = ({ variant = 'info', children }: MessageProps) => {
-    // Define as cores baseado na variante
     let colorClass = 'bg-blue-100 text-blue-800 border-blue-200';
 
     if (variant === 'danger') {

@@ -3,12 +3,10 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'https://ecommerceportifolio.onrender.com',
-        // 👇 A MÁGICA: Permite que o cookie de login viaje entre Netlify e Render
         credentials: 'include',
     }),
     tagTypes: ['Product', 'Order', 'User'],
     endpoints: (builder) => ({
-        // 1. Busca lista de produtos
         getProducts: builder.query({
             query: ({ keyword, pageNumber }) => ({
                 url: '/api/products',
@@ -17,7 +15,6 @@ export const apiSlice = createApi({
             keepUnusedDataFor: 5,
         }),
 
-        // 2. Busca detalhes
         getProductDetails: builder.query({
             query: (productId) => ({
                 url: `/api/products/${productId}`,
@@ -25,7 +22,6 @@ export const apiSlice = createApi({
             keepUnusedDataFor: 5,
         }),
 
-        // 3. Busca destaques (Carrossel)
         getTopProducts: builder.query({
             query: () => ({
                 url: '/api/products/top',

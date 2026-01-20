@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FaTrash } from 'react-icons/fa';
-import axios from 'axios'; // <--- Importante para buscar os dados do produto
+import axios from 'axios';
 import { addToCart, removeFromCart } from '../slices/cartSlice';
 import type { RootState } from '../store';
 import type { CartItem } from '../slices/cartSlice';
@@ -11,25 +11,20 @@ const CartScreen = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // 1. Pega o ID da URL (se houver)
     const { id } = useParams();
 
-    // 2. Pega a quantidade da URL (?qty=1)
     const { search } = useLocation();
     const qty = search ? Number(new URLSearchParams(search).get('qty')) : 1;
 
-    // Pega os dados do carrinho do Redux
     const cart = useSelector((state: RootState) => state.cart);
     const { cartItems } = cart;
 
-    // --- LÓGICA NOVA: Se tiver ID na URL, busca o produto e adiciona ---
     useEffect(() => {
         if (id) {
             const addItem = async () => {
                 try {
                     const { data } = await axios.get(`/api/products/${id}`);
 
-                    // Monta o objeto do produto para salvar no Redux
                     dispatch(addToCart({
                         _id: data._id,
                         name: data.name,
@@ -45,7 +40,6 @@ const CartScreen = () => {
             addItem();
         }
     }, [dispatch, id, qty]);
-    // ------------------------------------------------------------------
 
     const addToCartHandler = (product: CartItem, qty: number) => {
         dispatch(addToCart({ ...product, qty }));
@@ -56,7 +50,6 @@ const CartScreen = () => {
     };
 
     const checkoutHandler = () => {
-        // Redireciona para login, depois para shipping
         navigate('/login?redirect=/shipping');
     };
 
@@ -65,7 +58,6 @@ const CartScreen = () => {
             <h1 className="text-3xl font-bold mb-6 text-slate-800">Carrinho de Compras</h1>
 
             <div className="flex flex-col md:flex-row gap-8">
-                {/* Lado Esquerdo: Lista de Itens */}
                 <div className="md:w-2/3">
                     {cartItems.length === 0 ? (
                         <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded" role="alert">
@@ -110,7 +102,6 @@ const CartScreen = () => {
                     )}
                 </div>
 
-                {/* Lado Direito: Resumo do Pedido */}
                 <div className="md:w-1/3">
                     <div className="border border-gray-200 rounded-lg shadow-sm bg-gray-50 p-6 sticky top-4">
                         <h2 className="text-xl font-bold border-b pb-4 mb-4 text-slate-800">

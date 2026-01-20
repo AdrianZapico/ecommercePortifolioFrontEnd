@@ -3,7 +3,6 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Message from '../../components/Message';
 import Loader from '../../components/Loader';
-// 👇 A MÁGICA: Importamos os hooks do Redux em vez do axios manual
 import {
     useGetProductsQuery,
     useCreateProductMutation,
@@ -11,16 +10,12 @@ import {
 } from '../../slices/productsApiSlice';
 
 const ProductListScreen = () => {
-    // 1. Pega a página da URL
     const { pageNumber } = useParams();
 
-    // 2. BUSCA DE DADOS (Substitui o useEffect e axios.get)
-    // O Redux cuida de carregar, erro e atualizar sozinho
     const { data, isLoading, error, refetch } = useGetProductsQuery({
         pageNumber: pageNumber || 1
     });
 
-    // 3. HOOKS DE AÇÃO (Substitui axios.post e axios.delete)
     const [createProduct, { isLoading: loadingCreate }] = useCreateProductMutation();
     const [deleteProduct, { isLoading: loadingDelete }] = useDeleteProductMutation();
 
@@ -28,7 +23,6 @@ const ProductListScreen = () => {
         if (window.confirm('Tem certeza que deseja excluir este produto?')) {
             try {
                 await deleteProduct(id);
-                // Não precisa chamar fetchProducts(), o Redux atualiza a lista sozinho!
                 refetch();
                 toast.success('Produto excluído com sucesso');
             } catch (err: any) {
@@ -43,9 +37,6 @@ const ProductListScreen = () => {
                 await createProduct({});
                 refetch();
                 toast.success('Produto criado');
-                // Nota: O backend deve criar o produto e o Redux atualizará a lista. 
-                // Se quiser redirecionar para edição imediata, precisariamos pegar o ID retornado,
-                // mas por enquanto vamos apenas atualizar a lista para evitar erros.
             } catch (err: any) {
                 toast.error(err?.data?.message || err.error);
             }
@@ -67,10 +58,8 @@ const ProductListScreen = () => {
                 </button>
             </div>
 
-            {/* LOADER DE AÇÕES RÁPIDAS */}
             {(loadingCreate || loadingDelete) && <Loader />}
 
-            {/* TABELA PRINCIPAL */}
             {isLoading ? (
                 <div className="flex justify-center py-20">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
@@ -92,7 +81,6 @@ const ProductListScreen = () => {
                                 </tr>
                             </thead>
                             <tbody className="text-slate-600 divide-y divide-slate-100">
-                                {/* O Redux devolve 'data' contendo 'products' */}
                                 {data.products.map((product: any) => (
                                     <tr key={product._id} className="hover:bg-slate-50 transition-colors">
                                         <td className="py-4 px-6 font-mono text-xs">{product._id}</td>
@@ -128,16 +116,15 @@ const ProductListScreen = () => {
                         </table>
                     </div>
 
-                    {/* PAGINAÇÃO (Usando dados vindos do Redux: data.pages e data.page) */}
                     {data.pages > 1 && (
                         <div className="flex justify-center mt-8 gap-2">
                             {[...Array(data.pages).keys()].map((x) => (
                                 <Link
                                     key={x + 1}
-                                    to={`/admin/productlist/${x + 1}`} // Ajustei a URL para o padrão comum
+                                    to={`/admin/productlist/${x + 1}`}
                                     className={`px-4 py-2 rounded-md font-bold transition-all ${x + 1 === data.page
-                                            ? 'bg-slate-900 text-white shadow-md scale-110'
-                                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                        ? 'bg-slate-900 text-white shadow-md scale-110'
+                                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                                         }`}
                                 >
                                     {x + 1}

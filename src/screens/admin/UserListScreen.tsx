@@ -9,10 +9,8 @@ import {
 } from '../../slices/usersApiSlice';
 
 const UserListScreen = () => {
-    // 1. Busca os dados usando Redux (Automaticamente trata loading e erro)
     const { data: users, refetch, isLoading, error } = useGetUsersQuery({});
 
-    // 2. Hook para deletar
     const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
 
     const deleteHandler = async (id: string) => {

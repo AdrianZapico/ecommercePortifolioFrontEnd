@@ -14,7 +14,6 @@ const PaymentScreen = () => {
     const { shippingAddress } = cart;
 
     useEffect(() => {
-        // Se não tiver endereço, joga o usuário de volta para a tela de entrega
         if (!shippingAddress.address) {
             navigate('/shipping');
         }
@@ -23,7 +22,6 @@ const PaymentScreen = () => {
     const submitHandler = (e: FormEvent) => {
         e.preventDefault();
         dispatch(savePaymentMethod(paymentMethod));
-        // Próximo passo: Tela de Revisão do Pedido (Place Order)
         navigate('/placeorder');
     };
 
@@ -51,7 +49,6 @@ const PaymentScreen = () => {
                             </label>
                         </div>
 
-                        {/* Você pode adicionar mais opções aqui no futuro, como PIX */}
                     </div>
 
                     <button
